@@ -45,7 +45,7 @@ class AdminAuthService {
     }
 
     final Map<String, dynamic> data = snapshot.data()!;
-    final String role = (data['role'] as String?) ?? '';
+    final String role = _normalizeRole((data['role'] as String?) ?? '');
     if (role != 'admin') {
       return AdminSessionUser(
         id: user.uid,
@@ -65,5 +65,9 @@ class AdminAuthService {
 
   Future<void> signOut() async {
     await _auth.signOut();
+  }
+
+  String _normalizeRole(String value) {
+    return value.replaceAll('"', '').trim().toLowerCase();
   }
 }
