@@ -63,11 +63,28 @@ class AdminService {
         amount: ((data['amount'] as num?) ?? 0).toDouble(),
         status: (data['status'] as String?) ?? 'pending',
         platform: (data['platform'] as String?) ?? 'unknown',
+        statusMessage: (data['statusMessage'] as String?) ?? '',
       );
     }).toList();
 
     requests.sort((AdminPaymentRequest a, AdminPaymentRequest b) =>
         a.status.compareTo(b.status));
     return requests;
+  }
+
+  Future<void> reviewPaymentRequest({
+    required AdminPaymentRequest request,
+    required String reviewStatus,
+  }) async {
+    await _firestore
+        .collection('dairies')
+        .doc(request.dairyId)
+        .collection('subscription_requests')
+        .doc(request.id)
+        .update(<String, dynamic>{
+      'status': reviewStatus,
+      'statusMessage': 'Reviewed by admin',
+      'reviewedAt': Timestamp.fromDate(DateTime.now()),
+    });
   }
 }

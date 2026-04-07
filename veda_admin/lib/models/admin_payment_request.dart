@@ -7,6 +7,7 @@ class AdminPaymentRequest {
     required this.amount,
     required this.status,
     required this.platform,
+    required this.statusMessage,
   });
 
   final String id;
@@ -16,4 +17,5 @@ class AdminPaymentRequest {
   final double amount;
   final String status;
   final String platform;
+  final String statusMessage;
 }
