@@ -85,7 +85,7 @@ class AdminHomeScreen extends StatelessWidget {
                 AdminDashboardScreen(adminService: adminService),
                 UsersScreen(adminService: adminService),
                 PaymentsScreen(adminService: adminService),
-                const ReportsScreen(),
+                ReportsScreen(adminService: adminService),
               ],
             ),
           ),

@@ -1,7 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/admin_dashboard_summary.dart';
+import '../models/admin_dairy_summary.dart';
 import '../models/admin_payment_request.dart';
+import '../models/admin_reports_summary.dart';
 import '../models/admin_user_record.dart';
 
 class AdminService {
@@ -86,5 +88,53 @@ class AdminService {
       'statusMessage': 'Reviewed by admin',
       'reviewedAt': Timestamp.fromDate(DateTime.now()),
     });
+  }
+
+  Future<AdminReportsSummary> loadReportsSummary() async {
+    final List<AdminUserRecord> users = await fetchUsers();
+    final List<AdminPaymentRequest> requests = await fetchPaymentRequests();
+    final Set<String> dairyIds = <String>{
+      ...users.map((AdminUserRecord user) => user.dairyId),
+      ...requests.map((AdminPaymentRequest request) => request.dairyId),
+    }..removeWhere((String dairyId) => dairyId.trim().isEmpty);
+
+    final List<AdminDairySummary> dairies = dairyIds.map((String dairyId) {
+      final int userCount =
+          users.where((AdminUserRecord user) => user.dairyId == dairyId).length;
+      final int pendingPayments = requests.where((AdminPaymentRequest request) {
+        return request.dairyId == dairyId && request.status == 'pending';
+      }).length;
+      final int completedPayments =
+          requests.where((AdminPaymentRequest request) {
+        return request.dairyId == dairyId && request.status == 'success';
+      }).length;
+
+      return AdminDairySummary(
+        dairyId: dairyId,
+        userCount: userCount,
+        pendingPayments: pendingPayments,
+        completedPayments: completedPayments,
+      );
+    }).toList()
+      ..sort(
+        (AdminDairySummary a, AdminDairySummary b) =>
+            a.dairyId.compareTo(b.dairyId),
+      );
+
+    return AdminReportsSummary(
+      totalPending: requests
+          .where((AdminPaymentRequest request) => request.status == 'pending')
+          .length,
+      totalApproved: requests
+          .where((AdminPaymentRequest request) => request.status == 'approved')
+          .length,
+      totalRejected: requests
+          .where((AdminPaymentRequest request) => request.status == 'rejected')
+          .length,
+      totalSuccess: requests
+          .where((AdminPaymentRequest request) => request.status == 'success')
+          .length,
+      dairies: dairies,
+    );
   }
 }
