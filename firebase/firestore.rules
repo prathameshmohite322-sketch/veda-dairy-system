@@ -13,19 +13,83 @@ service cloud.firestore {
       return isSignedIn() && userDoc().data != null;
     }
 
+    function role() {
+      return hasProfile() ? userDoc().data.role : null;
+    }
+
+    function isAdmin() {
+      return role() == 'admin';
+    }
+
+    function isOwner() {
+      return role() == 'owner';
+    }
+
+    function isStaff() {
+      return role() == 'staff';
+    }
+
     function hasDairyAccess(dairyId) {
-      return hasProfile() && userDoc().data.dairyId == dairyId;
+      return isAdmin() || (hasProfile() && userDoc().data.dairyId == dairyId);
+    }
+
+    function isDairyManager(dairyId) {
+      return hasDairyAccess(dairyId) && (isOwner() || isAdmin());
+    }
+
+    function isDairyOperator(dairyId) {
+      return hasDairyAccess(dairyId) && (isOwner() || isStaff() || isAdmin());
     }
 
     match /users/{userId} {
-      allow read, write: if isSignedIn() && request.auth.uid == userId;
+      allow read: if isAdmin() || (isSignedIn() && request.auth.uid == userId);
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isAdmin() || (
+        isSignedIn() &&
+        request.auth.uid == userId &&
+        request.resource.data.role == resource.data.role &&
+        request.resource.data.dairyId == resource.data.dairyId
+      );
+      allow delete: if isAdmin();
     }
 
     match /dairies/{dairyId} {
-      allow read, write: if hasDairyAccess(dairyId);
+      allow read: if hasDairyAccess(dairyId);
+      allow write: if isAdmin();
+
+      match /customers/{customerId} {
+        allow read: if hasDairyAccess(dairyId);
+        allow create, update: if isDairyManager(dairyId);
+        allow delete: if isAdmin();
+      }
+
+      match /milk_entries/{entryId} {
+        allow read: if hasDairyAccess(dairyId);
+        allow create, update: if isDairyOperator(dairyId);
+        allow delete: if isDairyManager(dairyId);
+      }
+
+      match /khata_entries/{entryId} {
+        allow read: if hasDairyAccess(dairyId);
+        allow create, update: if isDairyOperator(dairyId);
+        allow delete: if isDairyManager(dairyId);
+      }
+
+      match /factory_sales/{saleId} {
+        allow read: if hasDairyAccess(dairyId);
+        allow create, update, delete: if isDairyManager(dairyId);
+      }
+
+      match /subscription_requests/{requestId} {
+        allow read: if hasDairyAccess(dairyId);
+        allow create: if isDairyOperator(dairyId);
+        allow update: if isAdmin();
+        allow delete: if isAdmin();
+      }
+
       match /{document=**} {
         allow read: if hasDairyAccess(dairyId);
-        allow write: if hasDairyAccess(dairyId);
+        allow write: if isAdmin();
       }
     }
   }
