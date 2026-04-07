@@ -8,38 +8,59 @@ import '../models/dashboard_report_model.dart';
 import '../models/khata_entry_model.dart';
 import '../models/customer_model.dart';
 import '../models/milk_entry_model.dart';
+import 'offline_service.dart';
 
 class MilkEntryService {
   MilkEntryService({
     FirebaseFirestore? firestore,
-  }) : _firestore = firestore ?? FirebaseFirestore.instance;
+    OfflineService? offlineService,
+  })  : _firestore = firestore ?? FirebaseFirestore.instance,
+        _offlineService = offlineService ?? OfflineService();
 
   final FirebaseFirestore _firestore;
+  final OfflineService _offlineService;
 
   CollectionReference<Map<String, dynamic>> _entriesRef(String dairyId) {
-    return _firestore.collection('dairies').doc(dairyId).collection('milk_entries');
+    return _firestore
+        .collection('dairies')
+        .doc(dairyId)
+        .collection('milk_entries');
   }
 
   Future<List<MilkEntryModel>> fetchEntries(String dairyId) async {
-    final QuerySnapshot<Map<String, dynamic>> snapshot =
-        await _entriesRef(dairyId).orderBy('createdAt', descending: true).get();
-    return snapshot.docs.map((QueryDocumentSnapshot<Map<String, dynamic>> doc) {
-      final Map<String, dynamic> data = doc.data();
-      return MilkEntryModel(
-        id: doc.id,
-        dairyId: dairyId,
-        customerId: (data['customerId'] as String?) ?? '',
-        customerName: (data['customerName'] as String?) ?? '',
-        shift: (data['shift'] as String?) ?? 'Morning',
-        cattleType: (data['cattleType'] as String?) ?? 'Cow',
-        liters: ((data['liters'] as num?) ?? 0).toDouble(),
-        fat: ((data['fat'] as num?) ?? 0).toDouble(),
-        snf: ((data['snf'] as num?) ?? 0).toDouble(),
-        rate: ((data['rate'] as num?) ?? 0).toDouble(),
-        amount: ((data['amount'] as num?) ?? 0).toDouble(),
-        createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+    try {
+      final QuerySnapshot<Map<String, dynamic>> snapshot =
+          await _entriesRef(dairyId)
+              .orderBy('createdAt', descending: true)
+              .get();
+      final List<MilkEntryModel> entries =
+          snapshot.docs.map((QueryDocumentSnapshot<Map<String, dynamic>> doc) {
+        return _fromMap(
+          id: doc.id,
+          dairyId: dairyId,
+          data: doc.data(),
+        );
+      }).toList();
+
+      await _offlineService.writeList(
+        boxName: OfflineService.milkEntriesBoxName,
+        key: dairyId,
+        items: entries.map(_toMap).toList(),
       );
-    }).toList();
+      return entries;
+    } catch (_) {
+      final List<Map<String, dynamic>> cached = _offlineService.readList(
+        boxName: OfflineService.milkEntriesBoxName,
+        key: dairyId,
+      );
+      return cached
+          .map((Map<String, dynamic> item) => _fromMap(
+                id: item['id'] as String? ?? '',
+                dairyId: dairyId,
+                data: item,
+              ))
+          .toList();
+    }
   }
 
   Future<MilkEntryModel> addEntry({
@@ -70,22 +91,42 @@ class MilkEntryService {
       amount: DairyCalculations.calculateAmount(liters: liters, rate: rate),
       createdAt: DateTime.now(),
     );
-    await _entriesRef(dairyId).doc(entry.id).set(<String, dynamic>{
-      'customerId': entry.customerId,
-      'customerName': entry.customerName,
-      'shift': entry.shift,
-      'cattleType': entry.cattleType,
-      'liters': entry.liters,
-      'fat': entry.fat,
-      'snf': entry.snf,
-      'rate': entry.rate,
-      'amount': entry.amount,
-      'createdAt': Timestamp.fromDate(entry.createdAt),
-    });
+    try {
+      await _entriesRef(dairyId).doc(entry.id).set(<String, dynamic>{
+        'customerId': entry.customerId,
+        'customerName': entry.customerName,
+        'shift': entry.shift,
+        'cattleType': entry.cattleType,
+        'liters': entry.liters,
+        'fat': entry.fat,
+        'snf': entry.snf,
+        'rate': entry.rate,
+        'amount': entry.amount,
+        'createdAt': Timestamp.fromDate(entry.createdAt),
+      });
+    } catch (_) {
+      await _offlineService.enqueuePendingOperation(
+        operationType: 'milk_entry_add',
+        recordId: entry.id,
+        payload: _toMap(entry),
+      );
+    }
+
+    final List<MilkEntryModel> cachedEntries =
+        await _readCachedOrRemoteEntries(dairyId);
+    if (cachedEntries.every((MilkEntryModel item) => item.id != entry.id)) {
+      cachedEntries.insert(0, entry);
+      await _offlineService.writeList(
+        boxName: OfflineService.milkEntriesBoxName,
+        key: dairyId,
+        items: cachedEntries.map(_toMap).toList(),
+      );
+    }
     return entry;
   }
 
-  Future<List<BillingSummaryModel>> buildBillingSummaries(String dairyId) async {
+  Future<List<BillingSummaryModel>> buildBillingSummaries(
+      String dairyId) async {
     final BillingCycleModel cycle = currentBillingCycle();
     return buildBillingSummariesForCycle(
       dairyId: dairyId,
@@ -104,7 +145,8 @@ class MilkEntryService {
     return BillingCycleModel(
       startDate: startDate,
       endDate: endDate,
-      label: '${startDate.day}/${startDate.month}/${startDate.year} - ${endDate.day}/${endDate.month}/${endDate.year}',
+      label:
+          '${startDate.day}/${startDate.month}/${startDate.year} - ${endDate.day}/${endDate.month}/${endDate.year}',
     );
   }
 
@@ -115,7 +157,8 @@ class MilkEntryService {
 
     while (cycles.length < count) {
       final BillingCycleModel cycle = _cycleForDate(anchor);
-      if (cycles.every((BillingCycleModel existing) => existing.label != cycle.label)) {
+      if (cycles.every(
+          (BillingCycleModel existing) => existing.label != cycle.label)) {
         cycles.add(cycle);
       }
       anchor = cycle.startDate.subtract(const Duration(days: 1));
@@ -128,13 +171,15 @@ class MilkEntryService {
     final int cycleStartDay = date.day <= 10 ? 1 : (date.day <= 20 ? 11 : 21);
     final DateTime startDate = DateTime(date.year, date.month, cycleStartDay);
     final DateTime endDate = cycleStartDay == 21
-        ? DateTime(date.year, date.month + 1, 1).subtract(const Duration(days: 1))
+        ? DateTime(date.year, date.month + 1, 1)
+            .subtract(const Duration(days: 1))
         : DateTime(date.year, date.month, cycleStartDay + 9);
 
     return BillingCycleModel(
       startDate: startDate,
       endDate: endDate,
-      label: '${startDate.day}/${startDate.month}/${startDate.year} - ${endDate.day}/${endDate.month}/${endDate.year}',
+      label:
+          '${startDate.day}/${startDate.month}/${startDate.year} - ${endDate.day}/${endDate.month}/${endDate.year}',
     );
   }
 
@@ -145,13 +190,17 @@ class MilkEntryService {
     final List<MilkEntryModel> dairyEntries = (await fetchEntries(dairyId))
         .where((MilkEntryModel entry) => _isWithinCycle(entry.createdAt, cycle))
         .toList();
-    final Map<String, List<MilkEntryModel>> grouped = <String, List<MilkEntryModel>>{};
+    final Map<String, List<MilkEntryModel>> grouped =
+        <String, List<MilkEntryModel>>{};
 
     for (final MilkEntryModel entry in dairyEntries) {
-      grouped.putIfAbsent(entry.customerId, () => <MilkEntryModel>[]).add(entry);
+      grouped
+          .putIfAbsent(entry.customerId, () => <MilkEntryModel>[])
+          .add(entry);
     }
 
-    final List<BillingSummaryModel> summaries = grouped.entries.map((MapEntry<String, List<MilkEntryModel>> item) {
+    final List<BillingSummaryModel> summaries =
+        grouped.entries.map((MapEntry<String, List<MilkEntryModel>> item) {
       final List<MilkEntryModel> entries = item.value;
       final double liters = entries.fold(
         0,
@@ -194,15 +243,16 @@ class MilkEntryService {
     required BillingSummaryModel summary,
     required List<KhataEntryModel> khataEntries,
   }) async {
-    final List<MilkEntryModel> entries = (await fetchEntries(dairyId))
-        .where((MilkEntryModel entry) {
-          return entry.customerId == summary.customerId &&
-              !entry.createdAt.isBefore(summary.cycleStart) &&
-              !entry.createdAt.isAfter(
-                summary.cycleEnd.add(const Duration(days: 1)).subtract(const Duration(milliseconds: 1)),
-              );
-        })
-        .toList();
+    final List<MilkEntryModel> entries =
+        (await fetchEntries(dairyId)).where((MilkEntryModel entry) {
+      return entry.customerId == summary.customerId &&
+          !entry.createdAt.isBefore(summary.cycleStart) &&
+          !entry.createdAt.isAfter(
+            summary.cycleEnd
+                .add(const Duration(days: 1))
+                .subtract(const Duration(milliseconds: 1)),
+          );
+    }).toList();
 
     if (entries.isEmpty) {
       return null;
@@ -244,14 +294,18 @@ class MilkEntryService {
     final List<MilkEntryModel> entries = await fetchEntries(dairyId);
     final DateTime now = DateTime.now();
     final DateTime todayStart = DateTime(now.year, now.month, now.day);
-    final DateTime todayEnd = DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
+    final DateTime todayEnd =
+        DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
     final BillingCycleModel cycle = currentBillingCycle();
 
-    final List<MilkEntryModel> todayEntries = entries.where((MilkEntryModel entry) {
-      return !entry.createdAt.isBefore(todayStart) && !entry.createdAt.isAfter(todayEnd);
+    final List<MilkEntryModel> todayEntries =
+        entries.where((MilkEntryModel entry) {
+      return !entry.createdAt.isBefore(todayStart) &&
+          !entry.createdAt.isAfter(todayEnd);
     }).toList();
 
-    final List<MilkEntryModel> cycleEntries = entries.where((MilkEntryModel entry) {
+    final List<MilkEntryModel> cycleEntries =
+        entries.where((MilkEntryModel entry) {
       return _isWithinCycle(entry.createdAt, cycle);
     }).toList();
 
@@ -299,5 +353,64 @@ class MilkEntryService {
       999,
     );
     return !date.isBefore(cycleStart) && !date.isAfter(cycleEnd);
+  }
+
+  MilkEntryModel _fromMap({
+    required String id,
+    required String dairyId,
+    required Map<String, dynamic> data,
+  }) {
+    final Object? createdAt = data['createdAt'];
+    return MilkEntryModel(
+      id: id,
+      dairyId: dairyId,
+      customerId: (data['customerId'] as String?) ?? '',
+      customerName: (data['customerName'] as String?) ?? '',
+      shift: (data['shift'] as String?) ?? 'Morning',
+      cattleType: (data['cattleType'] as String?) ?? 'Cow',
+      liters: ((data['liters'] as num?) ?? 0).toDouble(),
+      fat: ((data['fat'] as num?) ?? 0).toDouble(),
+      snf: ((data['snf'] as num?) ?? 0).toDouble(),
+      rate: ((data['rate'] as num?) ?? 0).toDouble(),
+      amount: ((data['amount'] as num?) ?? 0).toDouble(),
+      createdAt: createdAt is Timestamp
+          ? createdAt.toDate()
+          : DateTime.tryParse(createdAt?.toString() ?? '') ?? DateTime.now(),
+    );
+  }
+
+  Map<String, dynamic> _toMap(MilkEntryModel entry) {
+    return <String, dynamic>{
+      'id': entry.id,
+      'dairyId': entry.dairyId,
+      'customerId': entry.customerId,
+      'customerName': entry.customerName,
+      'shift': entry.shift,
+      'cattleType': entry.cattleType,
+      'liters': entry.liters,
+      'fat': entry.fat,
+      'snf': entry.snf,
+      'rate': entry.rate,
+      'amount': entry.amount,
+      'createdAt': entry.createdAt.toIso8601String(),
+    };
+  }
+
+  Future<List<MilkEntryModel>> _readCachedOrRemoteEntries(
+      String dairyId) async {
+    final List<Map<String, dynamic>> cached = _offlineService.readList(
+      boxName: OfflineService.milkEntriesBoxName,
+      key: dairyId,
+    );
+    if (cached.isNotEmpty) {
+      return cached
+          .map((Map<String, dynamic> item) => _fromMap(
+                id: item['id'] as String? ?? '',
+                dairyId: dairyId,
+                data: item,
+              ))
+          .toList();
+    }
+    return fetchEntries(dairyId);
   }
 }

@@ -1,4 +1,5 @@
-const Map<String, Map<String, String>> translations = <String, Map<String, String>>{
+const Map<String, Map<String, String>> translations =
+    <String, Map<String, String>>{
   'en': <String, String>{
     'appName': 'Veda Dairy System',
     'loginTitle': 'Veda Dairy Login',
@@ -89,6 +90,22 @@ const Map<String, Map<String, String>> translations = <String, Map<String, Strin
     'noKhataAdjustments': 'No khata adjustments in this cycle.',
     'billReadyToShare': 'Bill ready to share or save: {fileName}',
     'logout': 'Logout',
+    'openFactory': 'Open Factory',
+    'factorySales': 'Factory Sales',
+    'addFactorySale': 'Add Factory Sale',
+    'factoryName': 'Factory name',
+    'factorySaleRate': 'Sale rate per liter',
+    'factoryCommissionPerLiter': 'Commission per liter',
+    'saveFactorySale': 'Save Factory Sale',
+    'factoryReports': 'Factory Reports',
+    'factoryTotalLiters': 'Factory Liters',
+    'factoryTotalAmount': 'Factory Amount',
+    'factoryCommissionAmount': 'Commission Rs {value}',
+    'factoryProfit': 'Factory Profit',
+    'factoryProfitSubtitle': 'Net amount after commission deduction',
+    'factoryProfitShort': 'Profit Rs {value}',
+    'factorySalesCount': '{count} factory sales recorded',
+    'noFactorySales': 'No factory sales added yet.',
   },
   'mr': <String, String>{
     'appName': 'वेदा डेअरी सिस्टम',
