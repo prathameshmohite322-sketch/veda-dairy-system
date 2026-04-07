@@ -5,6 +5,7 @@ import '../../models/customer_model.dart';
 import '../../models/milk_entry_model.dart';
 import '../../services/auth_service.dart';
 import '../../services/customer_service.dart';
+import '../../services/khata_service.dart';
 import '../../services/milk_entry_service.dart';
 import '../customer/farmer_list_screen.dart';
 import '../milk_entry/milk_entry_screen.dart';
@@ -15,6 +16,7 @@ class DashboardScreen extends StatefulWidget {
     required this.user,
     required this.authService,
     required this.customerService,
+    required this.khataService,
     required this.milkEntryService,
     required this.onLogout,
   });
@@ -22,6 +24,7 @@ class DashboardScreen extends StatefulWidget {
   final AppUser user;
   final AuthService authService;
   final CustomerService customerService;
+  final KhataService khataService;
   final MilkEntryService milkEntryService;
   final VoidCallback onLogout;
 
@@ -140,6 +143,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               MaterialPageRoute<void>(
                                 builder: (_) => FarmerListScreen(
                                   customers: _customers,
+                                  khataService: widget.khataService,
                                 ),
                               ),
                             );

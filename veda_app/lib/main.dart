@@ -7,6 +7,7 @@ import 'features/dashboard/dashboard_screen.dart';
 import 'models/app_user.dart';
 import 'services/auth_service.dart';
 import 'services/customer_service.dart';
+import 'services/khata_service.dart';
 import 'services/milk_entry_service.dart';
 
 void main() {
@@ -23,6 +24,7 @@ class VedaApp extends StatefulWidget {
 class _VedaAppState extends State<VedaApp> {
   final AuthService _authService = AuthService();
   final CustomerService _customerService = CustomerService();
+  final KhataService _khataService = KhataService();
   final MilkEntryService _milkEntryService = MilkEntryService();
 
   AppUser? _user;
@@ -51,6 +53,7 @@ class _VedaAppState extends State<VedaApp> {
               user: _user!,
               authService: _authService,
               customerService: _customerService,
+              khataService: _khataService,
               milkEntryService: _milkEntryService,
               onLogout: () {
                 setState(() {

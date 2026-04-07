@@ -9,6 +9,8 @@ class CustomerService {
       phone: '9876543210',
       village: 'Satara Road',
       cattleType: 'Cow',
+      totalAdvance: 8000,
+      usedAdvance: 3200,
       isActive: true,
     ),
     const CustomerModel(
@@ -18,6 +20,8 @@ class CustomerService {
       phone: '9876500011',
       village: 'Karad',
       cattleType: 'Buffalo',
+      totalAdvance: 12000,
+      usedAdvance: 7000,
       isActive: true,
     ),
     const CustomerModel(
@@ -27,6 +31,8 @@ class CustomerService {
       phone: '9876502233',
       village: 'Umbraj',
       cattleType: 'Cow',
+      totalAdvance: 5000,
+      usedAdvance: 1500,
       isActive: true,
     ),
   ];

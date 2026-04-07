@@ -6,6 +6,8 @@ class CustomerModel {
     required this.phone,
     required this.village,
     required this.cattleType,
+    required this.totalAdvance,
+    required this.usedAdvance,
     required this.isActive,
   });
 
@@ -15,5 +17,7 @@ class CustomerModel {
   final String phone;
   final String village;
   final String cattleType;
+  final double totalAdvance;
+  final double usedAdvance;
   final bool isActive;
 }
