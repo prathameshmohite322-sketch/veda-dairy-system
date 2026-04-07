@@ -10,6 +10,7 @@ import 'services/admin_auth_service.dart';
 import 'services/admin_service.dart';
 import 'users/users_placeholder.dart';
 import 'widgets/access_denied_screen.dart';
+import 'widgets/admin_error_view.dart';
 import 'widgets/admin_login_screen.dart';
 import 'widgets/admin_login_required_screen.dart';
 
@@ -58,6 +59,14 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
           : Future.value(_sessionUser),
       builder:
           (BuildContext context, AsyncSnapshot<AdminSessionUser?> snapshot) {
+        if (snapshot.hasError) {
+          return Scaffold(
+            body: AdminErrorView(
+              title: 'Admin Session Load Failed',
+              error: snapshot.error!,
+            ),
+          );
+        }
         if (!snapshot.hasData) {
           if (snapshot.connectionState != ConnectionState.done) {
             return const Scaffold(

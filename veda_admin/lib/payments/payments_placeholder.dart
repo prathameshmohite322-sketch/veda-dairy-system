@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/admin_payment_request.dart';
 import '../services/admin_service.dart';
+import '../widgets/admin_error_view.dart';
 
 class PaymentsScreen extends StatefulWidget {
   const PaymentsScreen({
@@ -38,6 +39,13 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
       future: _requestsFuture,
       builder: (BuildContext context,
           AsyncSnapshot<List<AdminPaymentRequest>> snapshot) {
+        if (snapshot.hasError) {
+          return AdminErrorView(
+            title: 'Payments Load Failed',
+            error: snapshot.error!,
+            onRetry: _reload,
+          );
+        }
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
         }

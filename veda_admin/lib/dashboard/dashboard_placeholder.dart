@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/admin_dashboard_summary.dart';
 import '../services/admin_service.dart';
+import '../widgets/admin_error_view.dart';
 
 class AdminDashboardScreen extends StatelessWidget {
   const AdminDashboardScreen({
@@ -17,6 +18,12 @@ class AdminDashboardScreen extends StatelessWidget {
       future: adminService.loadSummary(),
       builder: (BuildContext context,
           AsyncSnapshot<AdminDashboardSummary> snapshot) {
+        if (snapshot.hasError) {
+          return AdminErrorView(
+            title: 'Dashboard Load Failed',
+            error: snapshot.error!,
+          );
+        }
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
         }

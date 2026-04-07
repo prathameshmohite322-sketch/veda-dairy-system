@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/admin_user_record.dart';
 import '../services/admin_service.dart';
+import '../widgets/admin_error_view.dart';
 
 class UsersScreen extends StatefulWidget {
   const UsersScreen({
@@ -25,6 +26,12 @@ class _UsersScreenState extends State<UsersScreen> {
       future: widget.adminService.fetchUsers(),
       builder: (BuildContext context,
           AsyncSnapshot<List<AdminUserRecord>> snapshot) {
+        if (snapshot.hasError) {
+          return AdminErrorView(
+            title: 'Users Load Failed',
+            error: snapshot.error!,
+          );
+        }
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
         }

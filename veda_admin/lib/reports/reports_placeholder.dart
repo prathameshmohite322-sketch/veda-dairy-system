@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/admin_dairy_summary.dart';
 import '../models/admin_reports_summary.dart';
 import '../services/admin_service.dart';
+import '../widgets/admin_error_view.dart';
 
 class ReportsScreen extends StatelessWidget {
   const ReportsScreen({
@@ -18,6 +19,12 @@ class ReportsScreen extends StatelessWidget {
       future: adminService.loadReportsSummary(),
       builder:
           (BuildContext context, AsyncSnapshot<AdminReportsSummary> snapshot) {
+        if (snapshot.hasError) {
+          return AdminErrorView(
+            title: 'Reports Load Failed',
+            error: snapshot.error!,
+          );
+        }
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
         }
