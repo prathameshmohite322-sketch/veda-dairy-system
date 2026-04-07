@@ -9,6 +9,7 @@ Veda Dairy System is a multi-module dairy ERP built for owner, staff, and admin 
 - `firebase` - Firestore security rules and indexes
 - `PROJECT_GUIDE.md` - architecture and folder explanation
 - `ENV_SETUP.md` - local setup steps
+- `PROJECT_STATUS.md` - current build status and remaining work
 
 ## Core product modules
 
@@ -20,14 +21,31 @@ Veda Dairy System is a multi-module dairy ERP built for owner, staff, and admin 
 - Offline-first storage with later sync
 - PDF bill generation and sharing flows
 - English and Marathi support
+- Admin payment review and dairy-level reporting
 
-## Run order
+## Current build status
 
-1. Set up Flutter and Firebase from `ENV_SETUP.md`
-2. Start `veda_app`
-3. Add Firebase config files
-4. Build the first production module: milk entry
+- operational Flutter apps and Firebase integration are already in place
+- core dairy workflows are implemented in `veda_app`
+- admin review/reporting workflows are implemented in `veda_admin`
+- Firestore rules have been tightened and deployed
 
-## Current status
+See `PROJECT_STATUS.md` for the latest completed modules and remaining work.
 
-This repository now contains the production-ready starter structure and architecture files. Feature implementation is the next phase.
+## Run locally
+
+### veda_app
+
+```bash
+cd veda_app
+flutter pub get
+flutter run -d chrome
+```
+
+### veda_admin
+
+```bash
+cd veda_admin
+flutter pub get
+flutter run -d chrome
+```

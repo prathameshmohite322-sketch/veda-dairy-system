@@ -32,10 +32,20 @@ All tenant-owned records must include `dairyId`. Firestore queries and rules sho
 
 ## Recommended next implementation order
 
+Completed core order:
+
 1. Authentication and role model
 2. Customer and farmer master data
 3. Milk entry and rate calculation
 4. Billing and khata ledger
 5. Offline queue and sync logic
-6. PDF generation and WhatsApp sharing
+6. PDF generation and sharing flow
 7. Admin dashboard and subscriptions
+
+Recommended next order:
+
+1. Live payment key setup
+2. Production release configuration
+3. WhatsApp-specific share polish
+4. Final settings and profile screens
+5. Optional reporting exports
