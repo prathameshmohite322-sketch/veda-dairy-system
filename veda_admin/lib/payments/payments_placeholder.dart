@@ -1,43 +1,47 @@
 import 'package:flutter/material.dart';
 
+import '../models/admin_payment_request.dart';
+import '../services/admin_service.dart';
+
 class PaymentsScreen extends StatelessWidget {
-  const PaymentsScreen({super.key});
+  const PaymentsScreen({
+    super.key,
+    required this.adminService,
+  });
+
+  final AdminService adminService;
 
   @override
   Widget build(BuildContext context) {
-    const List<Map<String, String>> requests = <Map<String, String>>[
-      <String, String>{
-        'plan': 'Growth',
-        'amount': 'Rs 999',
-        'status': 'Pending',
-      },
-      <String, String>{
-        'plan': 'Starter',
-        'amount': 'Rs 499',
-        'status': 'Pending',
-      },
-      <String, String>{
-        'plan': 'Premium',
-        'amount': 'Rs 1499',
-        'status': 'Success',
-      },
-    ];
-
-    return ListView(
-      padding: const EdgeInsets.all(20),
-      children: requests
-          .map(
-            (Map<String, String> request) => Card(
-              child: ListTile(
-                title: Text(request['plan'] ?? ''),
-                subtitle: Text(request['amount'] ?? ''),
-                trailing: Chip(
-                  label: Text(request['status'] ?? ''),
+    return FutureBuilder<List<AdminPaymentRequest>>(
+      future: adminService.fetchPaymentRequests(),
+      builder: (BuildContext context,
+          AsyncSnapshot<List<AdminPaymentRequest>> snapshot) {
+        if (!snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final List<AdminPaymentRequest> requests = snapshot.data!;
+        if (requests.isEmpty) {
+          return const Center(child: Text('No subscription requests found.'));
+        }
+        return ListView(
+          padding: const EdgeInsets.all(20),
+          children: requests
+              .map(
+                (AdminPaymentRequest request) => Card(
+                  child: ListTile(
+                    title: Text('${request.planName} | ${request.userEmail}'),
+                    subtitle: Text(
+                        '${request.dairyId} | Rs ${request.amount.toStringAsFixed(0)}'),
+                    trailing: Chip(
+                      label: Text('${request.status} (${request.platform})'),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          )
-          .toList(),
+              )
+              .toList(),
+        );
+      },
     );
   }
 }

@@ -1,11 +1,18 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
 import 'dashboard/dashboard_placeholder.dart';
+import 'firebase_options.dart';
 import 'payments/payments_placeholder.dart';
 import 'reports/reports_placeholder.dart';
+import 'services/admin_service.dart';
 import 'users/users_placeholder.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(const VedaAdminApp());
 }
 
@@ -31,6 +38,7 @@ class AdminHomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AdminService adminService = AdminService();
     return DefaultTabController(
       length: 4,
       child: Scaffold(
@@ -46,12 +54,12 @@ class AdminHomeScreen extends StatelessWidget {
             ],
           ),
         ),
-        body: const TabBarView(
+        body: TabBarView(
           children: <Widget>[
-            AdminDashboardScreen(),
-            UsersScreen(),
-            PaymentsScreen(),
-            ReportsScreen(),
+            AdminDashboardScreen(adminService: adminService),
+            UsersScreen(adminService: adminService),
+            PaymentsScreen(adminService: adminService),
+            const ReportsScreen(),
           ],
         ),
       ),
