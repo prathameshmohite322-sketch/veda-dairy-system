@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 
 class AdminLoginRequiredScreen extends StatelessWidget {
-  const AdminLoginRequiredScreen({super.key});
+  const AdminLoginRequiredScreen({
+    super.key,
+    required this.onSignIn,
+  });
+
+  final VoidCallback onSignIn;
 
   @override
   Widget build(BuildContext context) {
@@ -22,6 +27,11 @@ class AdminLoginRequiredScreen extends StatelessWidget {
               const Text(
                 'Sign in from the main app with an admin account first, then reopen the admin panel.',
                 textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              FilledButton(
+                onPressed: onSignIn,
+                child: const Text('Sign In'),
               ),
             ],
           ),

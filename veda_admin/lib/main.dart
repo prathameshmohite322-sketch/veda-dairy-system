@@ -10,6 +10,7 @@ import 'services/admin_auth_service.dart';
 import 'services/admin_service.dart';
 import 'users/users_placeholder.dart';
 import 'widgets/access_denied_screen.dart';
+import 'widgets/admin_login_screen.dart';
 import 'widgets/admin_login_required_screen.dart';
 
 Future<void> main() async {
@@ -37,15 +38,24 @@ class VedaAdminApp extends StatelessWidget {
   }
 }
 
-class AdminHomeScreen extends StatelessWidget {
+class AdminHomeScreen extends StatefulWidget {
   const AdminHomeScreen({super.key});
 
   @override
+  State<AdminHomeScreen> createState() => _AdminHomeScreenState();
+}
+
+class _AdminHomeScreenState extends State<AdminHomeScreen> {
+  final AdminService _adminService = AdminService();
+  final AdminAuthService _adminAuthService = AdminAuthService();
+  AdminSessionUser? _sessionUser;
+
+  @override
   Widget build(BuildContext context) {
-    final AdminService adminService = AdminService();
-    final AdminAuthService adminAuthService = AdminAuthService();
     return FutureBuilder<AdminSessionUser?>(
-      future: adminAuthService.currentAdminUser(),
+      future: _sessionUser == null
+          ? _adminAuthService.currentAdminUser()
+          : Future.value(_sessionUser),
       builder:
           (BuildContext context, AsyncSnapshot<AdminSessionUser?> snapshot) {
         if (!snapshot.hasData) {
@@ -54,14 +64,16 @@ class AdminHomeScreen extends StatelessWidget {
               body: Center(child: CircularProgressIndicator()),
             );
           }
-          return const AdminLoginRequiredScreen();
+          return AdminLoginRequiredScreen(
+            onSignIn: _openLogin,
+          );
         }
 
         final AdminSessionUser user = snapshot.data!;
         if (user.role != 'admin') {
           return AccessDeniedScreen(
             role: user.role,
-            onSignOut: adminAuthService.signOut,
+            onSignOut: _handleSignOut,
           );
         }
 
@@ -70,6 +82,13 @@ class AdminHomeScreen extends StatelessWidget {
           child: Scaffold(
             appBar: AppBar(
               title: Text('Veda Admin | ${user.name}'),
+              actions: <Widget>[
+                IconButton(
+                  onPressed: _handleSignOut,
+                  icon: const Icon(Icons.logout),
+                  tooltip: 'Sign Out',
+                ),
+              ],
               bottom: const TabBar(
                 isScrollable: true,
                 tabs: <Tab>[
@@ -82,15 +101,45 @@ class AdminHomeScreen extends StatelessWidget {
             ),
             body: TabBarView(
               children: <Widget>[
-                AdminDashboardScreen(adminService: adminService),
-                UsersScreen(adminService: adminService),
-                PaymentsScreen(adminService: adminService),
-                ReportsScreen(adminService: adminService),
+                AdminDashboardScreen(adminService: _adminService),
+                UsersScreen(adminService: _adminService),
+                PaymentsScreen(adminService: _adminService),
+                ReportsScreen(adminService: _adminService),
               ],
             ),
           ),
         );
       },
     );
+  }
+
+  Future<void> _openLogin() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => AdminLoginScreen(
+          adminAuthService: _adminAuthService,
+          onLogin: (AdminSessionUser user) {
+            setState(() {
+              _sessionUser = user;
+            });
+            Navigator.of(context).pop();
+          },
+        ),
+      ),
+    );
+    if (!mounted) {
+      return;
+    }
+    setState(() {});
+  }
+
+  Future<void> _handleSignOut() async {
+    await _adminAuthService.signOut();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _sessionUser = null;
+    });
   }
 }
