@@ -1,0 +1,3 @@
+class TransactionsPlaceholder {
+  const TransactionsPlaceholder();
+}

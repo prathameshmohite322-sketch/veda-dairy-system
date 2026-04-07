@@ -1,0 +1,3 @@
+class ReportsPlaceholder {
+  const ReportsPlaceholder();
+}

@@ -1,0 +1,3 @@
+class AdminDashboardPlaceholder {
+  const AdminDashboardPlaceholder();
+}

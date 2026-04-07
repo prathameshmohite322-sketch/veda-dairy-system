@@ -1,0 +1,3 @@
+class FactoryPlaceholder {
+  const FactoryPlaceholder();
+}

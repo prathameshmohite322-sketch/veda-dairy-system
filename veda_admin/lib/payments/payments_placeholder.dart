@@ -1,0 +1,3 @@
+class PaymentsPlaceholder {
+  const PaymentsPlaceholder();
+}

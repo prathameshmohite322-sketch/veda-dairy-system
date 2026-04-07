@@ -1,0 +1,3 @@
+class UsersPlaceholder {
+  const UsersPlaceholder();
+}
