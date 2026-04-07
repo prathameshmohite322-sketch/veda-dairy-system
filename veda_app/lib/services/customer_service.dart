@@ -67,4 +67,16 @@ class CustomerService {
       isActive: (data['isActive'] as bool?) ?? true,
     );
   }
+
+  Future<void> updateAdvanceSummary({
+    required String dairyId,
+    required String customerId,
+    required double totalAdvance,
+    required double usedAdvance,
+  }) async {
+    await _customersRef(dairyId).doc(customerId).update(<String, dynamic>{
+      'totalAdvance': totalAdvance,
+      'usedAdvance': usedAdvance,
+    });
+  }
 }

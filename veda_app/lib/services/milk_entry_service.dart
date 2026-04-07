@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../core/calculations.dart';
+import '../models/billing_cycle_model.dart';
 import '../models/billing_detail_model.dart';
 import '../models/billing_summary_model.dart';
 import '../models/khata_entry_model.dart';
@@ -84,7 +85,65 @@ class MilkEntryService {
   }
 
   Future<List<BillingSummaryModel>> buildBillingSummaries(String dairyId) async {
-    final List<MilkEntryModel> dairyEntries = await fetchEntries(dairyId);
+    final BillingCycleModel cycle = currentBillingCycle();
+    return buildBillingSummariesForCycle(
+      dairyId: dairyId,
+      cycle: cycle,
+    );
+  }
+
+  BillingCycleModel currentBillingCycle() {
+    final DateTime now = DateTime.now();
+    final int cycleStartDay = now.day <= 10 ? 1 : (now.day <= 20 ? 11 : 21);
+    final DateTime startDate = DateTime(now.year, now.month, cycleStartDay);
+    final DateTime endDate = cycleStartDay == 21
+        ? DateTime(now.year, now.month + 1, 1).subtract(const Duration(days: 1))
+        : DateTime(now.year, now.month, cycleStartDay + 9);
+
+    return BillingCycleModel(
+      startDate: startDate,
+      endDate: endDate,
+      label: '${startDate.day}/${startDate.month}/${startDate.year} - ${endDate.day}/${endDate.month}/${endDate.year}',
+    );
+  }
+
+  List<BillingCycleModel> recentBillingCycles({int count = 6}) {
+    final DateTime now = DateTime.now();
+    DateTime anchor = DateTime(now.year, now.month, now.day);
+    final List<BillingCycleModel> cycles = <BillingCycleModel>[];
+
+    while (cycles.length < count) {
+      final BillingCycleModel cycle = _cycleForDate(anchor);
+      if (cycles.every((BillingCycleModel existing) => existing.label != cycle.label)) {
+        cycles.add(cycle);
+      }
+      anchor = cycle.startDate.subtract(const Duration(days: 1));
+    }
+
+    return cycles;
+  }
+
+  BillingCycleModel _cycleForDate(DateTime date) {
+    final int cycleStartDay = date.day <= 10 ? 1 : (date.day <= 20 ? 11 : 21);
+    final DateTime startDate = DateTime(date.year, date.month, cycleStartDay);
+    final DateTime endDate = cycleStartDay == 21
+        ? DateTime(date.year, date.month + 1, 1).subtract(const Duration(days: 1))
+        : DateTime(date.year, date.month, cycleStartDay + 9);
+
+    return BillingCycleModel(
+      startDate: startDate,
+      endDate: endDate,
+      label: '${startDate.day}/${startDate.month}/${startDate.year} - ${endDate.day}/${endDate.month}/${endDate.year}',
+    );
+  }
+
+  Future<List<BillingSummaryModel>> buildBillingSummariesForCycle({
+    required String dairyId,
+    required BillingCycleModel cycle,
+  }) async {
+    final List<MilkEntryModel> dairyEntries = (await fetchEntries(dairyId))
+        .where((MilkEntryModel entry) => _isWithinCycle(entry.createdAt, cycle))
+        .toList();
     final Map<String, List<MilkEntryModel>> grouped = <String, List<MilkEntryModel>>{};
 
     for (final MilkEntryModel entry in dairyEntries) {
@@ -116,6 +175,8 @@ class MilkEntryService {
         averageSnf: avgSnf,
         totalAmount: amount,
         entryCount: entries.length,
+        cycleStart: cycle.startDate,
+        cycleEnd: cycle.endDate,
       );
     }).toList();
 
@@ -133,7 +194,13 @@ class MilkEntryService {
     required List<KhataEntryModel> khataEntries,
   }) async {
     final List<MilkEntryModel> entries = (await fetchEntries(dairyId))
-        .where((MilkEntryModel entry) => entry.customerId == summary.customerId)
+        .where((MilkEntryModel entry) {
+          return entry.customerId == summary.customerId &&
+              !entry.createdAt.isBefore(summary.cycleStart) &&
+              !entry.createdAt.isAfter(
+                summary.cycleEnd.add(const Duration(days: 1)).subtract(const Duration(milliseconds: 1)),
+              );
+        })
         .toList();
 
     if (entries.isEmpty) {
@@ -166,5 +233,23 @@ class MilkEntryService {
       deductionAmount: deductionAmount,
       finalPayableAmount: finalPayableAmount,
     );
+  }
+
+  bool _isWithinCycle(DateTime date, BillingCycleModel cycle) {
+    final DateTime cycleStart = DateTime(
+      cycle.startDate.year,
+      cycle.startDate.month,
+      cycle.startDate.day,
+    );
+    final DateTime cycleEnd = DateTime(
+      cycle.endDate.year,
+      cycle.endDate.month,
+      cycle.endDate.day,
+      23,
+      59,
+      59,
+      999,
+    );
+    return !date.isBefore(cycleStart) && !date.isAfter(cycleEnd);
   }
 }

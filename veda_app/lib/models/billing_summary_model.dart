@@ -7,6 +7,8 @@ class BillingSummaryModel {
     required this.averageSnf,
     required this.totalAmount,
     required this.entryCount,
+    required this.cycleStart,
+    required this.cycleEnd,
   });
 
   final String customerId;
@@ -16,4 +18,6 @@ class BillingSummaryModel {
   final double averageSnf;
   final double totalAmount;
   final int entryCount;
+  final DateTime cycleStart;
+  final DateTime cycleEnd;
 }

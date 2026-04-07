@@ -1,13 +1,17 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/khata_entry_model.dart';
+import 'customer_service.dart';
 
 class KhataService {
   KhataService({
     FirebaseFirestore? firestore,
-  }) : _firestore = firestore ?? FirebaseFirestore.instance;
+    CustomerService? customerService,
+  })  : _firestore = firestore ?? FirebaseFirestore.instance,
+        _customerService = customerService ?? CustomerService(firestore: firestore);
 
   final FirebaseFirestore _firestore;
+  final CustomerService _customerService;
 
   CollectionReference<Map<String, dynamic>> _khataRef(String dairyId) {
     return _firestore.collection('dairies').doc(dairyId).collection('khata_entries');
@@ -43,5 +47,36 @@ class KhataService {
       'note': entry.note,
       'createdAt': Timestamp.fromDate(entry.createdAt),
     });
+    await recalculateAdvanceSummary(
+      dairyId: entry.dairyId,
+      customerId: entry.customerId,
+    );
+  }
+
+  Future<void> recalculateAdvanceSummary({
+    required String dairyId,
+    required String customerId,
+  }) async {
+    final List<KhataEntryModel> entries = await fetchEntries(
+      dairyId: dairyId,
+      customerId: customerId,
+    );
+
+    final double totalAdvance = entries
+        .where((KhataEntryModel entry) => entry.type == 'advance')
+        .fold(0, (double sum, KhataEntryModel entry) => sum + entry.amount);
+
+    final double usedAdvance = entries
+        .where((KhataEntryModel entry) {
+          return entry.type == 'deduction' || entry.type == 'feed';
+        })
+        .fold(0, (double sum, KhataEntryModel entry) => sum + entry.amount);
+
+    await _customerService.updateAdvanceSummary(
+      dairyId: dairyId,
+      customerId: customerId,
+      totalAdvance: totalAdvance,
+      usedAdvance: usedAdvance,
+    );
   }
 }

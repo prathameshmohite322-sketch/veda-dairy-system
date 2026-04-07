@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../models/customer_model.dart';
+import '../../services/customer_service.dart';
 import '../../services/khata_service.dart';
 import 'add_farmer_screen.dart';
 import 'farmer_detail_screen.dart';
@@ -12,12 +13,14 @@ class FarmerListScreen extends StatelessWidget {
     required this.khataService,
     required this.dairyId,
     required this.onAddFarmer,
+    required this.customerService,
   });
 
   final List<CustomerModel> customers;
   final KhataService khataService;
   final String dairyId;
   final Future<void> Function(CustomerModel customer) onAddFarmer;
+  final CustomerService customerService;
 
   @override
   Widget build(BuildContext context) {
@@ -52,6 +55,7 @@ class FarmerListScreen extends StatelessWidget {
                     builder: (_) => FarmerDetailScreen(
                       customer: customer,
                       khataService: khataService,
+                      customerService: customerService,
                     ),
                   ),
                 );

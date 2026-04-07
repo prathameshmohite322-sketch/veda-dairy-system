@@ -2,54 +2,82 @@ import 'package:flutter/material.dart';
 
 import '../../models/customer_model.dart';
 import '../../models/khata_entry_model.dart';
+import '../../services/customer_service.dart';
 import '../../services/khata_service.dart';
 import '../../utils/account_calculation.dart';
+import 'add_khata_entry_screen.dart';
 
 class FarmerDetailScreen extends StatefulWidget {
   const FarmerDetailScreen({
     super.key,
     required this.customer,
     required this.khataService,
+    required this.customerService,
   });
 
   final CustomerModel customer;
   final KhataService khataService;
+  final CustomerService customerService;
 
   @override
   State<FarmerDetailScreen> createState() => _FarmerDetailScreenState();
 }
 
 class _FarmerDetailScreenState extends State<FarmerDetailScreen> {
+  late CustomerModel _customer;
   List<KhataEntryModel> _entries = <KhataEntryModel>[];
   bool _loading = true;
 
   @override
   void initState() {
     super.initState();
+    _customer = widget.customer;
     _loadEntries();
   }
 
   Future<void> _loadEntries() async {
     final List<KhataEntryModel> entries = await widget.khataService.fetchEntries(
-      dairyId: widget.customer.dairyId,
-      customerId: widget.customer.id,
+      dairyId: _customer.dairyId,
+      customerId: _customer.id,
     );
+    final CustomerModel? freshCustomer =
+        await widget.customerService.findCustomerById(_customer.id);
 
     if (!mounted) {
       return;
     }
 
     setState(() {
+      if (freshCustomer != null) {
+        _customer = freshCustomer;
+      }
       _entries = entries;
       _loading = false;
     });
   }
 
+  Future<void> _openAddKhataEntry() async {
+    final KhataEntryModel? entry = await Navigator.of(context).push<KhataEntryModel>(
+      MaterialPageRoute<KhataEntryModel>(
+        builder: (_) => AddKhataEntryScreen(
+          customer: _customer,
+        ),
+      ),
+    );
+
+    if (entry == null) {
+      return;
+    }
+
+    await widget.khataService.addEntry(entry);
+    await _loadEntries();
+  }
+
   @override
   Widget build(BuildContext context) {
     final double remainingAdvance = AccountCalculation.remainingAdvance(
-      totalAdvance: widget.customer.totalAdvance,
-      usedAdvance: widget.customer.usedAdvance,
+      totalAdvance: _customer.totalAdvance,
+      usedAdvance: _customer.usedAdvance,
     );
 
     final double totalDeposits = _sumByType('deposit');
@@ -59,7 +87,12 @@ class _FarmerDetailScreenState extends State<FarmerDetailScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.customer.name),
+        title: Text(_customer.name),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _openAddKhataEntry,
+        icon: const Icon(Icons.add),
+        label: const Text('Khata Entry'),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -73,12 +106,12 @@ class _FarmerDetailScreenState extends State<FarmerDetailScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         Text(
-                          widget.customer.name,
+                          _customer.name,
                           style: Theme.of(context).textTheme.headlineSmall,
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          '${widget.customer.village} | ${widget.customer.cattleType} | ${widget.customer.phone}',
+                          '${_customer.village} | ${_customer.cattleType} | ${_customer.phone}',
                         ),
                       ],
                     ),
@@ -87,12 +120,12 @@ class _FarmerDetailScreenState extends State<FarmerDetailScreen> {
                 const SizedBox(height: 16),
                 _KhataSummaryCard(
                   title: 'Total Advance',
-                  value: 'Rs ${widget.customer.totalAdvance.toStringAsFixed(0)}',
+                  value: 'Rs ${_customer.totalAdvance.toStringAsFixed(0)}',
                 ),
                 const SizedBox(height: 12),
                 _KhataSummaryCard(
                   title: 'Used Advance',
-                  value: 'Rs ${widget.customer.usedAdvance.toStringAsFixed(0)}',
+                  value: 'Rs ${_customer.usedAdvance.toStringAsFixed(0)}',
                 ),
                 const SizedBox(height: 12),
                 _KhataSummaryCard(

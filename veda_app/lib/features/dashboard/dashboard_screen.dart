@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../models/app_user.dart';
-import '../../models/billing_summary_model.dart';
 import '../../models/customer_model.dart';
 import '../../models/milk_entry_model.dart';
 import '../../services/auth_service.dart';
@@ -68,9 +67,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _openBilling() async {
-    final List<BillingSummaryModel> summaries =
-        await widget.milkEntryService.buildBillingSummaries(widget.user.dairyId);
-
     if (!mounted) {
       return;
     }
@@ -78,8 +74,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => BillingScreen(
-          summaries: summaries,
-          cycleLabel: 'Current 10-day cycle',
           dairyId: widget.user.dairyId,
           milkEntryService: widget.milkEntryService,
           khataService: widget.khataService,
@@ -174,6 +168,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   khataService: widget.khataService,
                                   dairyId: widget.user.dairyId,
                                   onAddFarmer: _addFarmer,
+                                  customerService: widget.customerService,
                                 ),
                               ),
                             );
