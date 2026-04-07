@@ -109,8 +109,7 @@ class PaymentService {
 
   bool get isWebCheckoutFallback => kIsWeb;
   bool get isMobileCheckoutSupported => !kIsWeb && _checkoutGateway.isSupported;
-  bool get isRazorpayConfigured =>
-      AppConstants.razorpayKeyId != 'rzp_test_replace_with_your_key';
+  bool get isRazorpayConfigured => AppConstants.razorpayKeyId.trim().isNotEmpty;
 
   Future<PaymentCheckoutResult> startSubscriptionCheckout({
     required String dairyId,

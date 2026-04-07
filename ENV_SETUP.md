@@ -46,8 +46,22 @@ $env:Path = "C:\Program Files\nodejs;C:\Users\PRATHAMESH\AppData\Roaming\npm;" +
 ## Payment setup note
 
 - `veda_app` already contains the Razorpay mobile checkout foundation
-- replace the placeholder key in `veda_app/lib/core/constants.dart` before live payment testing
+- pass the real key at runtime using `--dart-define=RAZORPAY_KEY_ID=your_key_id`
 - do not attempt live onboarding without valid KYC details
+
+## Android release setup
+
+1. Copy `veda_app/android/key.properties.example` to `veda_app/android/key.properties`
+2. Fill in the real keystore values
+3. Keep `key.properties` and keystore files out of git
+4. Use `--dart-define=RAZORPAY_KEY_ID=your_key_id` for payment-enabled builds
+
+Example:
+
+```powershell
+cd veda_app
+flutter run -d android --dart-define=RAZORPAY_KEY_ID=rzp_test_your_key
+```
 
 ## Notes
 
