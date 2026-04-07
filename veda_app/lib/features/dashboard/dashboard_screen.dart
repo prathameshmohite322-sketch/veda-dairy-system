@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 
 import '../../models/app_user.dart';
+import '../../models/billing_summary_model.dart';
 import '../../models/customer_model.dart';
 import '../../models/milk_entry_model.dart';
 import '../../services/auth_service.dart';
 import '../../services/customer_service.dart';
 import '../../services/khata_service.dart';
 import '../../services/milk_entry_service.dart';
+import '../billing/billing_screen.dart';
 import '../customer/farmer_list_screen.dart';
 import '../milk_entry/milk_entry_screen.dart';
 
@@ -58,6 +60,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _entries = entries;
       _loading = false;
     });
+  }
+
+  Future<void> _addFarmer(CustomerModel customer) async {
+    await widget.customerService.addCustomer(customer);
+    await _loadData();
+  }
+
+  Future<void> _openBilling() async {
+    final List<BillingSummaryModel> summaries =
+        await widget.milkEntryService.buildBillingSummaries(widget.user.dairyId);
+
+    if (!mounted) {
+      return;
+    }
+
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => BillingScreen(
+          summaries: summaries,
+          cycleLabel: 'Current 10-day cycle',
+          dairyId: widget.user.dairyId,
+          milkEntryService: widget.milkEntryService,
+          khataService: widget.khataService,
+        ),
+      ),
+    );
   }
 
   @override
@@ -144,11 +172,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 builder: (_) => FarmerListScreen(
                                   customers: _customers,
                                   khataService: widget.khataService,
+                                  dairyId: widget.user.dairyId,
+                                  onAddFarmer: _addFarmer,
                                 ),
                               ),
                             );
                           },
                           child: const Text('View Farmers'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: FilledButton.tonal(
+                          onPressed: _openBilling,
+                          child: const Text('Open Billing'),
                         ),
                       ),
                     ],

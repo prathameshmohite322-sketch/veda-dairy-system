@@ -1,49 +1,70 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import '../models/customer_model.dart';
 
 class CustomerService {
-  final List<CustomerModel> _customers = <CustomerModel>[
-    const CustomerModel(
-      id: 'c1',
-      dairyId: 'dairy_veda_001',
-      name: 'Amit Patil',
-      phone: '9876543210',
-      village: 'Satara Road',
-      cattleType: 'Cow',
-      totalAdvance: 8000,
-      usedAdvance: 3200,
-      isActive: true,
-    ),
-    const CustomerModel(
-      id: 'c2',
-      dairyId: 'dairy_veda_001',
-      name: 'Sunita Jadhav',
-      phone: '9876500011',
-      village: 'Karad',
-      cattleType: 'Buffalo',
-      totalAdvance: 12000,
-      usedAdvance: 7000,
-      isActive: true,
-    ),
-    const CustomerModel(
-      id: 'c3',
-      dairyId: 'dairy_veda_001',
-      name: 'Rohan Shinde',
-      phone: '9876502233',
-      village: 'Umbraj',
-      cattleType: 'Cow',
-      totalAdvance: 5000,
-      usedAdvance: 1500,
-      isActive: true,
-    ),
-  ];
+  CustomerService({
+    FirebaseFirestore? firestore,
+  }) : _firestore = firestore ?? FirebaseFirestore.instance;
+
+  final FirebaseFirestore _firestore;
+
+  CollectionReference<Map<String, dynamic>> _customersRef(String dairyId) {
+    return _firestore.collection('dairies').doc(dairyId).collection('customers');
+  }
 
   Future<List<CustomerModel>> fetchCustomers(String dairyId) async {
-    return _customers
-        .where((CustomerModel customer) => customer.dairyId == dairyId)
-        .toList();
+    final QuerySnapshot<Map<String, dynamic>> snapshot =
+        await _customersRef(dairyId).orderBy('name').get();
+    return snapshot.docs.map((QueryDocumentSnapshot<Map<String, dynamic>> doc) {
+      final Map<String, dynamic> data = doc.data();
+      return CustomerModel(
+        id: doc.id,
+        dairyId: dairyId,
+        name: (data['name'] as String?) ?? '',
+        phone: (data['phone'] as String?) ?? '',
+        village: (data['village'] as String?) ?? '',
+        cattleType: (data['cattleType'] as String?) ?? 'Cow',
+        totalAdvance: ((data['totalAdvance'] as num?) ?? 0).toDouble(),
+        usedAdvance: ((data['usedAdvance'] as num?) ?? 0).toDouble(),
+        isActive: (data['isActive'] as bool?) ?? true,
+      );
+    }).toList();
   }
 
   Future<void> addCustomer(CustomerModel customer) async {
-    _customers.insert(0, customer);
+    await _customersRef(customer.dairyId).doc(customer.id).set(<String, dynamic>{
+      'name': customer.name,
+      'phone': customer.phone,
+      'village': customer.village,
+      'cattleType': customer.cattleType,
+      'totalAdvance': customer.totalAdvance,
+      'usedAdvance': customer.usedAdvance,
+      'isActive': customer.isActive,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<CustomerModel?> findCustomerById(String customerId) async {
+    final Query<Map<String, dynamic>> query = _firestore.collectionGroup('customers');
+    final QuerySnapshot<Map<String, dynamic>> snapshot =
+        await query.where(FieldPath.documentId, isEqualTo: customerId).limit(1).get();
+    if (snapshot.docs.isEmpty) {
+      return null;
+    }
+    final QueryDocumentSnapshot<Map<String, dynamic>> doc = snapshot.docs.first;
+    final Map<String, dynamic> data = doc.data();
+    final String dairyId = doc.reference.parent.parent?.id ?? '';
+    return CustomerModel(
+      id: doc.id,
+      dairyId: dairyId,
+      name: (data['name'] as String?) ?? '',
+      phone: (data['phone'] as String?) ?? '',
+      village: (data['village'] as String?) ?? '',
+      cattleType: (data['cattleType'] as String?) ?? 'Cow',
+      totalAdvance: ((data['totalAdvance'] as num?) ?? 0).toDouble(),
+      usedAdvance: ((data['usedAdvance'] as num?) ?? 0).toDouble(),
+      isActive: (data['isActive'] as bool?) ?? true,
+    );
   }
 }

@@ -19,8 +19,8 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  final TextEditingController _phoneController =
-      TextEditingController(text: '9876543200');
+  final TextEditingController _emailController =
+      TextEditingController(text: 'owner@veda.com');
   final TextEditingController _passwordController =
       TextEditingController(text: 'owner123');
   bool _submitting = false;
@@ -28,7 +28,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
-    _phoneController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -43,10 +43,22 @@ class _LoginScreenState extends State<LoginScreen> {
       _error = null;
     });
 
-    final AppUser? user = await widget.authService.signIn(
-      phone: _phoneController.text.trim(),
-      password: _passwordController.text,
-    );
+    AppUser? user;
+    try {
+      user = await widget.authService.signIn(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _submitting = false;
+        _error = error.toString();
+      });
+      return;
+    }
 
     if (!mounted) {
       return;
@@ -56,6 +68,48 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() {
         _submitting = false;
         _error = 'Login failed';
+      });
+      return;
+    }
+
+    widget.onLogin(user);
+  }
+
+  Future<void> _createOwnerAccount() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() {
+      _submitting = true;
+      _error = null;
+    });
+
+    AppUser? user;
+    try {
+      user = await widget.authService.createOwnerAccount(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _submitting = false;
+        _error = error.toString();
+      });
+      return;
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    if (user == null) {
+      setState(() {
+        _submitting = false;
+        _error = 'Account creation failed';
       });
       return;
     }
@@ -85,19 +139,19 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Use owner or staff credentials to continue.',
+                      'Use your Firebase email and password to continue.',
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                     const SizedBox(height: 20),
                     TextFormField(
-                      controller: _phoneController,
+                      controller: _emailController,
                       decoration: const InputDecoration(
-                        labelText: 'Phone',
+                        labelText: 'Email',
                         border: OutlineInputBorder(),
                       ),
                       validator: (String? value) {
                         if (value == null || value.trim().isEmpty) {
-                          return 'Phone is required';
+                          return 'Email is required';
                         }
                         return null;
                       },
@@ -125,6 +179,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     FilledButton(
                       onPressed: _submitting ? null : _login,
                       child: Text(_submitting ? 'Signing in...' : 'Login'),
+                    ),
+                    const SizedBox(height: 12),
+                    OutlinedButton(
+                      onPressed: _submitting ? null : _createOwnerAccount,
+                      child: const Text('Create Owner Account'),
                     ),
                   ],
                 ),

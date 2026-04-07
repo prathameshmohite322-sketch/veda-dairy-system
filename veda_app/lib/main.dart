@@ -1,16 +1,22 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
 import 'core/app_language.dart';
 import 'core/constants.dart';
 import 'features/auth/login_screen.dart';
 import 'features/dashboard/dashboard_screen.dart';
+import 'firebase_options.dart';
 import 'models/app_user.dart';
 import 'services/auth_service.dart';
 import 'services/customer_service.dart';
 import 'services/khata_service.dart';
 import 'services/milk_entry_service.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(const VedaApp());
 }
 
@@ -28,6 +34,24 @@ class _VedaAppState extends State<VedaApp> {
   final MilkEntryService _milkEntryService = MilkEntryService();
 
   AppUser? _user;
+  bool _booting = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _restoreSession();
+  }
+
+  Future<void> _restoreSession() async {
+    final AppUser? user = await _authService.currentSessionUser();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _user = user;
+      _booting = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +64,11 @@ class _VedaAppState extends State<VedaApp> {
         fontFamily: 'Roboto',
       ),
       supportedLocales: AppLanguage.supportedLocales,
-      home: _user == null
+      home: _booting
+          ? const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            )
+          : _user == null
           ? LoginScreen(
               authService: _authService,
               onLogin: (AppUser user) {

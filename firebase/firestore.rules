@@ -5,22 +5,27 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function hasDairyAccess(dairyId) {
-      return isSignedIn() && request.auth.token.dairyId == dairyId;
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid));
     }
 
-    function isOwnerOrAdmin() {
-      return isSignedIn() &&
-        (request.auth.token.role == 'owner' || request.auth.token.role == 'admin');
+    function hasProfile() {
+      return isSignedIn() && userDoc().data != null;
+    }
+
+    function hasDairyAccess(dairyId) {
+      return hasProfile() && userDoc().data.dairyId == dairyId;
+    }
+
+    match /users/{userId} {
+      allow read, write: if isSignedIn() && request.auth.uid == userId;
     }
 
     match /dairies/{dairyId} {
-      allow read: if hasDairyAccess(dairyId);
-      allow write: if isOwnerOrAdmin() && hasDairyAccess(dairyId);
-
+      allow read, write: if hasDairyAccess(dairyId);
       match /{document=**} {
         allow read: if hasDairyAccess(dairyId);
-        allow write: if isOwnerOrAdmin() && hasDairyAccess(dairyId);
+        allow write: if hasDairyAccess(dairyId);
       }
     }
   }
