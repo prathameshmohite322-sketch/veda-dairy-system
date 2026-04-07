@@ -106,6 +106,15 @@ const Map<String, Map<String, String>> translations =
     'factoryProfitShort': 'Profit Rs {value}',
     'factorySalesCount': '{count} factory sales recorded',
     'noFactorySales': 'No factory sales added yet.',
+    'subscriptions': 'Subscriptions',
+    'subscriptionIntro':
+        'Choose a plan to create your subscription request. Razorpay checkout will be connected in the next mobile step.',
+    'choosePlan': 'Choose Plan',
+    'webPaymentNote':
+        'Web fallback is active. This step records the subscription request safely while keeping the app web-compatible.',
+    'mobilePaymentNote':
+        'Mobile checkout foundation is ready. The next step will connect Razorpay on Android.',
+    'subscriptionRequestCreated': 'Subscription request created: {requestId}',
   },
   'mr': <String, String>{
     'appName': 'वेदा डेअरी सिस्टम',

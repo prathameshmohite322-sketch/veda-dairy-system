@@ -17,6 +17,7 @@ import 'services/factory_service.dart';
 import 'services/khata_service.dart';
 import 'services/milk_entry_service.dart';
 import 'services/offline_service.dart';
+import 'services/payment_service.dart';
 import 'services/sync_service.dart';
 
 Future<void> main() async {
@@ -47,6 +48,7 @@ class _VedaAppState extends State<VedaApp> with WidgetsBindingObserver {
   late final FactoryService _factoryService;
   late final KhataService _khataService;
   late final MilkEntryService _milkEntryService;
+  late final PaymentService _paymentService;
   late final SyncService _syncService;
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
   Timer? _syncTimer;
@@ -62,6 +64,7 @@ class _VedaAppState extends State<VedaApp> with WidgetsBindingObserver {
     _customerService = CustomerService(offlineService: widget.offlineService);
     _factoryService = FactoryService(offlineService: widget.offlineService);
     _milkEntryService = MilkEntryService(offlineService: widget.offlineService);
+    _paymentService = PaymentService(offlineService: widget.offlineService);
     _khataService = KhataService(
       customerService: _customerService,
       offlineService: widget.offlineService,
@@ -135,6 +138,7 @@ class _VedaAppState extends State<VedaApp> with WidgetsBindingObserver {
                   factoryService: _factoryService,
                   khataService: _khataService,
                   milkEntryService: _milkEntryService,
+                  paymentService: _paymentService,
                   onLogout: () {
                     setState(() {
                       _user = null;

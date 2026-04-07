@@ -131,6 +131,24 @@ class SyncService {
           'createdAt': _timestampFrom(payload['createdAt']),
         });
         break;
+      case 'subscription_request_add':
+        await _firestore
+            .collection('dairies')
+            .doc(payload['dairyId'] as String)
+            .collection('subscription_requests')
+            .doc(payload['id'] as String)
+            .set(<String, dynamic>{
+          'userId': payload['userId'],
+          'userEmail': payload['userEmail'],
+          'planId': payload['planId'],
+          'planName': payload['planName'],
+          'amount': payload['amount'],
+          'billingLabel': payload['billingLabel'],
+          'status': payload['status'],
+          'platform': payload['platform'],
+          'createdAt': _timestampFrom(payload['createdAt']),
+        });
+        break;
       default:
         break;
     }

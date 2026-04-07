@@ -10,10 +10,12 @@ import '../../services/customer_service.dart';
 import '../../services/factory_service.dart';
 import '../../services/khata_service.dart';
 import '../../services/milk_entry_service.dart';
+import '../../services/payment_service.dart';
 import '../billing/billing_screen.dart';
 import '../customer/farmer_list_screen.dart';
 import '../factory/factory_screen.dart';
 import '../milk_entry/milk_entry_screen.dart';
+import '../payments/subscription_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({
@@ -24,6 +26,7 @@ class DashboardScreen extends StatefulWidget {
     required this.factoryService,
     required this.khataService,
     required this.milkEntryService,
+    required this.paymentService,
     required this.onLogout,
   });
 
@@ -33,6 +36,7 @@ class DashboardScreen extends StatefulWidget {
   final FactoryService factoryService;
   final KhataService khataService;
   final MilkEntryService milkEntryService;
+  final PaymentService paymentService;
   final VoidCallback onLogout;
 
   @override
@@ -115,6 +119,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
     );
     await _loadData();
+  }
+
+  Future<void> _openSubscriptions() async {
+    if (!mounted) {
+      return;
+    }
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => SubscriptionScreen(
+          user: widget.user,
+          paymentService: widget.paymentService,
+        ),
+      ),
+    );
   }
 
   @override
@@ -261,6 +279,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       onPressed: _openFactory,
                       icon: const Icon(Icons.factory_outlined),
                       label: Text(l10n.t('openFactory')),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.tonalIcon(
+                      onPressed: _openSubscriptions,
+                      icon: const Icon(Icons.credit_card),
+                      label: Text(l10n.t('subscriptions')),
                     ),
                   ),
                   const SizedBox(height: 20),
