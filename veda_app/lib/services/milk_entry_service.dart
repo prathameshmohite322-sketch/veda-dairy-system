@@ -4,6 +4,7 @@ import '../core/calculations.dart';
 import '../models/billing_cycle_model.dart';
 import '../models/billing_detail_model.dart';
 import '../models/billing_summary_model.dart';
+import '../models/dashboard_report_model.dart';
 import '../models/khata_entry_model.dart';
 import '../models/customer_model.dart';
 import '../models/milk_entry_model.dart';
@@ -232,6 +233,53 @@ class MilkEntryService {
       advanceAmount: advanceAmount,
       deductionAmount: deductionAmount,
       finalPayableAmount: finalPayableAmount,
+    );
+  }
+
+  Future<DashboardReportModel> buildDashboardReport({
+    required String dairyId,
+    required int activeFarmers,
+    required double totalAdvanceOutstanding,
+  }) async {
+    final List<MilkEntryModel> entries = await fetchEntries(dairyId);
+    final DateTime now = DateTime.now();
+    final DateTime todayStart = DateTime(now.year, now.month, now.day);
+    final DateTime todayEnd = DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
+    final BillingCycleModel cycle = currentBillingCycle();
+
+    final List<MilkEntryModel> todayEntries = entries.where((MilkEntryModel entry) {
+      return !entry.createdAt.isBefore(todayStart) && !entry.createdAt.isAfter(todayEnd);
+    }).toList();
+
+    final List<MilkEntryModel> cycleEntries = entries.where((MilkEntryModel entry) {
+      return _isWithinCycle(entry.createdAt, cycle);
+    }).toList();
+
+    final double todayMilkLiters = todayEntries.fold(
+      0,
+      (double sum, MilkEntryModel entry) => sum + entry.liters,
+    );
+    final double todayMilkValue = todayEntries.fold(
+      0,
+      (double sum, MilkEntryModel entry) => sum + entry.amount,
+    );
+    final double currentCycleAmount = cycleEntries.fold(
+      0,
+      (double sum, MilkEntryModel entry) => sum + entry.amount,
+    );
+    final double currentCycleLiters = cycleEntries.fold(
+      0,
+      (double sum, MilkEntryModel entry) => sum + entry.liters,
+    );
+
+    return DashboardReportModel(
+      todayMilkLiters: todayMilkLiters,
+      todayMilkValue: todayMilkValue,
+      currentCycleAmount: currentCycleAmount,
+      currentCycleLiters: currentCycleLiters,
+      activeFarmers: activeFarmers,
+      totalAdvanceOutstanding: totalAdvanceOutstanding,
+      recentEntryCount: entries.take(5).length,
     );
   }
 

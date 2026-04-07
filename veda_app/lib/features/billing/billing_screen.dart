@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/app_localizations.dart';
 import '../../models/billing_cycle_model.dart';
 import '../../models/billing_summary_model.dart';
 import '../../services/khata_service.dart';
@@ -59,6 +60,7 @@ class _BillingScreenState extends State<BillingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context);
     final double totalAmount = _summaries.fold(
       0,
       (double sum, BillingSummaryModel item) => sum + item.totalAmount,
@@ -70,7 +72,7 @@ class _BillingScreenState extends State<BillingScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('10-Day Billing'),
+        title: Text(l10n.t('billing')),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -79,9 +81,9 @@ class _BillingScreenState extends State<BillingScreen> {
               children: <Widget>[
                 DropdownButtonFormField<BillingCycleModel>(
                   initialValue: _selectedCycle,
-                  decoration: const InputDecoration(
-                    labelText: 'Billing cycle',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: l10n.t('billingCycle'),
+                    border: const OutlineInputBorder(),
                   ),
                   items: _cycles
                       .map(
@@ -111,22 +113,22 @@ class _BillingScreenState extends State<BillingScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         Text(
-                          _selectedCycle?.label ?? 'No cycle selected',
+                          _selectedCycle?.label ?? l10n.t('noCycleSelected'),
                           style: Theme.of(context).textTheme.titleLarge,
                         ),
                         const SizedBox(height: 8),
-                        Text('Total liters: ${totalLiters.toStringAsFixed(1)} L'),
-                        Text('Total amount: Rs ${totalAmount.toStringAsFixed(0)}'),
+                        Text(l10n.t('totalLitersLabel', <String, String>{'value': totalLiters.toStringAsFixed(1)})),
+                        Text(l10n.t('totalAmountLabel', <String, String>{'value': totalAmount.toStringAsFixed(0)})),
                       ],
                     ),
                   ),
                 ),
                 const SizedBox(height: 16),
                 if (_summaries.isEmpty)
-                  const Card(
+                  Card(
                     child: Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Text('No billing data available for this cycle.'),
+                      padding: const EdgeInsets.all(16),
+                      child: Text(l10n.t('noBillingData')),
                     ),
                   ),
                 ..._summaries.map(
@@ -154,9 +156,11 @@ class _BillingScreenState extends State<BillingScreen> {
                         );
                       },
                       title: Text(item.customerName),
-                      subtitle: Text(
-                        '${item.entryCount} entries | Fat ${item.averageFat.toStringAsFixed(1)} | SNF ${item.averageSnf.toStringAsFixed(1)}',
-                      ),
+                      subtitle: Text(l10n.t('entriesSummary', <String, String>{
+                        'count': '${item.entryCount}',
+                        'fat': item.averageFat.toStringAsFixed(1),
+                        'snf': item.averageSnf.toStringAsFixed(1),
+                      })),
                       trailing: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.end,

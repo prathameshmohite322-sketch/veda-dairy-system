@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/app_localizations.dart';
 import '../../models/customer_model.dart';
 
 class AddFarmerScreen extends StatefulWidget {
@@ -54,8 +55,9 @@ class _AddFarmerScreenState extends State<AddFarmerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Add Farmer')),
+      appBar: AppBar(title: Text(l10n.t('addFarmerTitle'))),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -63,41 +65,41 @@ class _AddFarmerScreenState extends State<AddFarmerScreen> {
           children: <Widget>[
             TextFormField(
               controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Farmer name',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.t('farmerName'),
+                border: const OutlineInputBorder(),
               ),
-              validator: _required,
+              validator: (String? value) => _required(value, l10n),
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _phoneController,
-              decoration: const InputDecoration(
-                labelText: 'Phone',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.t('phone'),
+                border: const OutlineInputBorder(),
               ),
               keyboardType: TextInputType.phone,
-              validator: _required,
+              validator: (String? value) => _required(value, l10n),
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _villageController,
-              decoration: const InputDecoration(
-                labelText: 'Village',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.t('village'),
+                border: const OutlineInputBorder(),
               ),
-              validator: _required,
+              validator: (String? value) => _required(value, l10n),
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
               initialValue: _cattleType,
-              decoration: const InputDecoration(
-                labelText: 'Cattle type',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.t('cattleType'),
+                border: const OutlineInputBorder(),
               ),
-              items: const <DropdownMenuItem<String>>[
-                DropdownMenuItem<String>(value: 'Cow', child: Text('Cow')),
-                DropdownMenuItem<String>(value: 'Buffalo', child: Text('Buffalo')),
+              items: <DropdownMenuItem<String>>[
+                DropdownMenuItem<String>(value: 'Cow', child: Text(l10n.t('cow'))),
+                DropdownMenuItem<String>(value: 'Buffalo', child: Text(l10n.t('buffalo'))),
               ],
               onChanged: (String? value) {
                 if (value == null) {
@@ -111,16 +113,16 @@ class _AddFarmerScreenState extends State<AddFarmerScreen> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _advanceController,
-              decoration: const InputDecoration(
-                labelText: 'Opening advance',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.t('openingAdvance'),
+                border: const OutlineInputBorder(),
               ),
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
             ),
             const SizedBox(height: 20),
             FilledButton(
               onPressed: _submit,
-              child: const Text('Save Farmer'),
+              child: Text(l10n.t('saveFarmer')),
             ),
           ],
         ),
@@ -128,9 +130,9 @@ class _AddFarmerScreenState extends State<AddFarmerScreen> {
     );
   }
 
-  String? _required(String? value) {
+  String? _required(String? value, AppLocalizations l10n) {
     if (value == null || value.trim().isEmpty) {
-      return 'Required';
+      return l10n.t('required');
     }
     return null;
   }

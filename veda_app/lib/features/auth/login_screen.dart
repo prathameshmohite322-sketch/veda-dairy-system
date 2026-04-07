@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/app_localizations.dart';
 import '../../models/app_user.dart';
 import '../../services/auth_service.dart';
 
@@ -34,6 +35,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _login() async {
+    final AppLocalizations l10n = AppLocalizations.of(context);
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -67,7 +69,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (user == null) {
       setState(() {
         _submitting = false;
-        _error = 'Login failed';
+        _error = l10n.t('loginFailed');
       });
       return;
     }
@@ -76,6 +78,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _createOwnerAccount() async {
+    final AppLocalizations l10n = AppLocalizations.of(context);
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -109,7 +112,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (user == null) {
       setState(() {
         _submitting = false;
-        _error = 'Account creation failed';
+        _error = l10n.t('accountCreationFailed');
       });
       return;
     }
@@ -119,7 +122,23 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context);
+
     return Scaffold(
+      appBar: AppBar(
+        actions: <Widget>[
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.language),
+            onSelected: (String code) {
+              l10n.setLocale(Locale(code));
+            },
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+              PopupMenuItem<String>(value: 'en', child: Text(l10n.t('english'))),
+              PopupMenuItem<String>(value: 'mr', child: Text(l10n.t('marathi'))),
+            ],
+          ),
+        ],
+      ),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 420),
@@ -134,24 +153,24 @@ class _LoginScreenState extends State<LoginScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
                     Text(
-                      'Veda Dairy Login',
+                      l10n.t('loginTitle'),
                       style: Theme.of(context).textTheme.headlineSmall,
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Use your Firebase email and password to continue.',
+                      l10n.t('loginSubtitle'),
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                     const SizedBox(height: 20),
                     TextFormField(
                       controller: _emailController,
-                      decoration: const InputDecoration(
-                        labelText: 'Email',
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        labelText: l10n.t('email'),
+                        border: const OutlineInputBorder(),
                       ),
                       validator: (String? value) {
                         if (value == null || value.trim().isEmpty) {
-                          return 'Email is required';
+                          return l10n.t('emailRequired');
                         }
                         return null;
                       },
@@ -160,13 +179,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     TextFormField(
                       controller: _passwordController,
                       obscureText: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Password',
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        labelText: l10n.t('password'),
+                        border: const OutlineInputBorder(),
                       ),
                       validator: (String? value) {
                         if (value == null || value.isEmpty) {
-                          return 'Password is required';
+                          return l10n.t('passwordRequired');
                         }
                         return null;
                       },
@@ -178,12 +197,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 20),
                     FilledButton(
                       onPressed: _submitting ? null : _login,
-                      child: Text(_submitting ? 'Signing in...' : 'Login'),
+                      child: Text(_submitting ? l10n.t('signingIn') : l10n.t('login')),
                     ),
                     const SizedBox(height: 12),
                     OutlinedButton(
                       onPressed: _submitting ? null : _createOwnerAccount,
-                      child: const Text('Create Owner Account'),
+                      child: Text(l10n.t('createOwnerAccount')),
                     ),
                   ],
                 ),

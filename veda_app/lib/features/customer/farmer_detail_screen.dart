@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/app_localizations.dart';
 import '../../models/customer_model.dart';
 import '../../models/khata_entry_model.dart';
 import '../../services/customer_service.dart';
@@ -75,6 +76,7 @@ class _FarmerDetailScreenState extends State<FarmerDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context);
     final double remainingAdvance = AccountCalculation.remainingAdvance(
       totalAdvance: _customer.totalAdvance,
       usedAdvance: _customer.usedAdvance,
@@ -92,7 +94,7 @@ class _FarmerDetailScreenState extends State<FarmerDetailScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _openAddKhataEntry,
         icon: const Icon(Icons.add),
-        label: const Text('Khata Entry'),
+        label: Text(l10n.t('khataEntry')),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -119,22 +121,22 @@ class _FarmerDetailScreenState extends State<FarmerDetailScreen> {
                 ),
                 const SizedBox(height: 16),
                 _KhataSummaryCard(
-                  title: 'Total Advance',
+                  title: l10n.t('totalAdvance'),
                   value: 'Rs ${_customer.totalAdvance.toStringAsFixed(0)}',
                 ),
                 const SizedBox(height: 12),
                 _KhataSummaryCard(
-                  title: 'Used Advance',
+                  title: l10n.t('usedAdvance'),
                   value: 'Rs ${_customer.usedAdvance.toStringAsFixed(0)}',
                 ),
                 const SizedBox(height: 12),
                 _KhataSummaryCard(
-                  title: 'Remaining Advance',
+                  title: l10n.t('remainingAdvance'),
                   value: 'Rs ${remainingAdvance.toStringAsFixed(0)}',
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Khata Snapshot',
+                  l10n.t('khataSnapshot'),
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 12),
@@ -142,29 +144,29 @@ class _FarmerDetailScreenState extends State<FarmerDetailScreen> {
                   spacing: 12,
                   runSpacing: 12,
                   children: <Widget>[
-                    _MiniMetric(label: 'Deposits', value: totalDeposits),
-                    _MiniMetric(label: 'Feed', value: totalFeed),
-                    _MiniMetric(label: 'Advance', value: totalAdvanceGiven),
-                    _MiniMetric(label: 'Deductions', value: totalDeductions),
+                    _MiniMetric(label: l10n.t('deposit'), value: totalDeposits),
+                    _MiniMetric(label: l10n.t('feed'), value: totalFeed),
+                    _MiniMetric(label: l10n.t('advance'), value: totalAdvanceGiven),
+                    _MiniMetric(label: l10n.t('deductions'), value: totalDeductions),
                   ],
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  'Ledger History',
+                  l10n.t('ledgerHistory'),
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 12),
                 if (_entries.isEmpty)
-                  const Card(
+                  Card(
                     child: Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Text('No khata entries for this farmer yet.'),
+                      padding: const EdgeInsets.all(16),
+                      child: Text(l10n.t('noKhataEntries')),
                     ),
                   ),
                 ..._entries.map(
                   (KhataEntryModel entry) => Card(
                     child: ListTile(
-                      title: Text(_titleForType(entry.type)),
+                      title: Text(_titleForType(entry.type, l10n)),
                       subtitle: Text(entry.note),
                       trailing: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -191,16 +193,16 @@ class _FarmerDetailScreenState extends State<FarmerDetailScreen> {
         .fold(0, (double sum, KhataEntryModel entry) => sum + entry.amount);
   }
 
-  String _titleForType(String type) {
+  String _titleForType(String type, AppLocalizations l10n) {
     switch (type) {
       case 'deposit':
-        return 'Deposit';
+        return l10n.t('deposit');
       case 'feed':
-        return 'Feed';
+        return l10n.t('feed');
       case 'advance':
-        return 'Advance';
+        return l10n.t('advance');
       case 'deduction':
-        return 'Manual Deduction';
+        return l10n.t('manualDeduction');
       default:
         return type;
     }

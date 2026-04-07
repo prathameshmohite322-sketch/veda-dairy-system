@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
 import 'core/app_language.dart';
+import 'core/app_localizations.dart';
 import 'core/constants.dart';
 import 'features/auth/login_screen.dart';
 import 'features/dashboard/dashboard_screen.dart';
@@ -35,6 +36,7 @@ class _VedaAppState extends State<VedaApp> {
 
   AppUser? _user;
   bool _booting = true;
+  Locale _locale = const Locale(AppConstants.defaultLanguageCode);
 
   @override
   void initState() {
@@ -58,37 +60,49 @@ class _VedaAppState extends State<VedaApp> {
     return MaterialApp(
       title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
+      locale: _locale,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2D6A4F)),
         useMaterial3: true,
         fontFamily: 'Roboto',
       ),
       supportedLocales: AppLanguage.supportedLocales,
+      builder: (BuildContext context, Widget? child) {
+        return AppLocalizations(
+          localeCode: _locale.languageCode,
+          onLocaleChanged: (Locale locale) {
+            setState(() {
+              _locale = locale;
+            });
+          },
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
       home: _booting
           ? const Scaffold(
               body: Center(child: CircularProgressIndicator()),
             )
           : _user == null
-          ? LoginScreen(
-              authService: _authService,
-              onLogin: (AppUser user) {
-                setState(() {
-                  _user = user;
-                });
-              },
-            )
-          : DashboardScreen(
-              user: _user!,
-              authService: _authService,
-              customerService: _customerService,
-              khataService: _khataService,
-              milkEntryService: _milkEntryService,
-              onLogout: () {
-                setState(() {
-                  _user = null;
-                });
-              },
-            ),
+              ? LoginScreen(
+                  authService: _authService,
+                  onLogin: (AppUser user) {
+                    setState(() {
+                      _user = user;
+                    });
+                  },
+                )
+              : DashboardScreen(
+                  user: _user!,
+                  authService: _authService,
+                  customerService: _customerService,
+                  khataService: _khataService,
+                  milkEntryService: _milkEntryService,
+                  onLogout: () {
+                    setState(() {
+                      _user = null;
+                    });
+                  },
+                ),
     );
   }
 }

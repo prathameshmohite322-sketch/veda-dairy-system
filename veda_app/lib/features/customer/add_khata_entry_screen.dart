@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/app_localizations.dart';
 import '../../models/customer_model.dart';
 import '../../models/khata_entry_model.dart';
 
@@ -49,9 +50,10 @@ class _AddKhataEntryScreenState extends State<AddKhataEntryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add Khata Entry'),
+        title: Text(l10n.t('addKhataEntry')),
       ),
       body: Form(
         key: _formKey,
@@ -65,15 +67,15 @@ class _AddKhataEntryScreenState extends State<AddKhataEntryScreen> {
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
               initialValue: _type,
-              decoration: const InputDecoration(
-                labelText: 'Entry type',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.t('entryType'),
+                border: const OutlineInputBorder(),
               ),
-              items: const <DropdownMenuItem<String>>[
-                DropdownMenuItem<String>(value: 'deposit', child: Text('Deposit')),
-                DropdownMenuItem<String>(value: 'feed', child: Text('Feed')),
-                DropdownMenuItem<String>(value: 'advance', child: Text('Advance')),
-                DropdownMenuItem<String>(value: 'deduction', child: Text('Manual Deduction')),
+              items: <DropdownMenuItem<String>>[
+                DropdownMenuItem<String>(value: 'deposit', child: Text(l10n.t('deposit'))),
+                DropdownMenuItem<String>(value: 'feed', child: Text(l10n.t('feed'))),
+                DropdownMenuItem<String>(value: 'advance', child: Text(l10n.t('advance'))),
+                DropdownMenuItem<String>(value: 'deduction', child: Text(l10n.t('manualDeduction'))),
               ],
               onChanged: (String? value) {
                 if (value == null) {
@@ -88,17 +90,17 @@ class _AddKhataEntryScreenState extends State<AddKhataEntryScreen> {
             TextFormField(
               controller: _amountController,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(
-                labelText: 'Amount',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.t('amount'),
+                border: const OutlineInputBorder(),
               ),
               validator: (String? value) {
                 if (value == null || value.trim().isEmpty) {
-                  return 'Amount is required';
+                  return l10n.t('amountRequired');
                 }
                 final double? parsed = double.tryParse(value);
                 if (parsed == null || parsed <= 0) {
-                  return 'Enter a valid amount';
+                  return l10n.t('enterValidAmount');
                 }
                 return null;
               },
@@ -107,13 +109,13 @@ class _AddKhataEntryScreenState extends State<AddKhataEntryScreen> {
             TextFormField(
               controller: _noteController,
               maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: 'Note',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.t('note'),
+                border: const OutlineInputBorder(),
               ),
               validator: (String? value) {
                 if (value == null || value.trim().isEmpty) {
-                  return 'Note is required';
+                  return l10n.t('noteRequired');
                 }
                 return null;
               },
@@ -121,7 +123,7 @@ class _AddKhataEntryScreenState extends State<AddKhataEntryScreen> {
             const SizedBox(height: 20),
             FilledButton(
               onPressed: _submit,
-              child: const Text('Save Khata Entry'),
+              child: Text(l10n.t('saveKhataEntry')),
             ),
           ],
         ),

@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
+import '../../core/app_localizations.dart';
 import '../../models/billing_detail_model.dart';
 import '../../models/khata_entry_model.dart';
 import '../../models/milk_entry_model.dart';
@@ -64,13 +65,17 @@ class _BillingDetailScreenState extends State<BillingDetailScreen> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Bill ready to share or save: $fileName'),
+        content: Text(AppLocalizations.of(context).t(
+          'billReadyToShare',
+          <String, String>{'fileName': fileName},
+        )),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
         title: Text('${widget.bill.summary.customerName} Bill'),
@@ -97,52 +102,52 @@ class _BillingDetailScreenState extends State<BillingDetailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   Text(
-                    '10-Day Bill',
+                    l10n.t('billTitle'),
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
                   const SizedBox(height: 6),
                   Text(widget.cycleLabel),
                   const Divider(height: 24),
                   _BillRow(
-                    label: 'Farmer',
+                    label: l10n.t('farmer'),
                     value: widget.bill.summary.customerName,
                   ),
                   _BillRow(
-                    label: 'Total liters',
+                    label: l10n.t('liters'),
                     value: '${widget.bill.summary.totalLiters.toStringAsFixed(1)} L',
                   ),
                   _BillRow(
-                    label: 'Avg fat',
+                    label: l10n.t('avgFat'),
                     value: widget.bill.summary.averageFat.toStringAsFixed(1),
                   ),
                   _BillRow(
-                    label: 'Avg SNF',
+                    label: l10n.t('avgSnf'),
                     value: widget.bill.summary.averageSnf.toStringAsFixed(1),
                   ),
                   _BillRow(
-                    label: 'Gross amount',
+                    label: l10n.t('grossAmount'),
                     value: 'Rs ${widget.bill.summary.totalAmount.toStringAsFixed(0)}',
                   ),
                   const Divider(height: 24),
                   _BillRow(
-                    label: 'Deposit',
+                    label: l10n.t('deposit'),
                     value: 'Rs ${widget.bill.depositAmount.toStringAsFixed(0)}',
                   ),
                   _BillRow(
-                    label: 'Feed',
+                    label: l10n.t('feed'),
                     value: 'Rs ${widget.bill.feedAmount.toStringAsFixed(0)}',
                   ),
                   _BillRow(
-                    label: 'Advance',
+                    label: l10n.t('advance'),
                     value: 'Rs ${widget.bill.advanceAmount.toStringAsFixed(0)}',
                   ),
                   _BillRow(
-                    label: 'Manual deduction',
+                    label: l10n.t('manualDeduction'),
                     value: 'Rs ${widget.bill.deductionAmount.toStringAsFixed(0)}',
                   ),
                   const Divider(height: 24),
                   _BillRow(
-                    label: 'Final payable',
+                    label: l10n.t('finalPayable'),
                     value: 'Rs ${widget.bill.finalPayableAmount.toStringAsFixed(0)}',
                     emphasize: true,
                   ),
@@ -152,22 +157,22 @@ class _BillingDetailScreenState extends State<BillingDetailScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            'Date-wise Milk Entries',
+            l10n.t('dateWiseMilkEntries'),
             style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: 12),
           ...widget.bill.entries.map(_entryCard),
           const SizedBox(height: 16),
           Text(
-            'Khata Adjustments',
+            l10n.t('khataAdjustments'),
             style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: 12),
           if (widget.bill.khataEntries.isEmpty)
-            const Card(
+            Card(
               child: Padding(
-                padding: EdgeInsets.all(16),
-                child: Text('No khata adjustments in this cycle.'),
+                padding: const EdgeInsets.all(16),
+                child: Text(l10n.t('noKhataAdjustments')),
               ),
             ),
           ...widget.bill.khataEntries.map(_khataCard),
@@ -189,9 +194,10 @@ class _BillingDetailScreenState extends State<BillingDetailScreen> {
   }
 
   Widget _khataCard(KhataEntryModel entry) {
+    final AppLocalizations l10n = AppLocalizations.of(context);
     return Card(
       child: ListTile(
-        title: Text(_khataLabel(entry.type)),
+        title: Text(_khataLabel(entry.type, l10n)),
         subtitle: Text('${entry.note} | ${_dateLabel(entry.createdAt)}'),
         trailing: Text('Rs ${entry.amount.toStringAsFixed(0)}'),
       ),
@@ -202,16 +208,16 @@ class _BillingDetailScreenState extends State<BillingDetailScreen> {
     return '${value.day}/${value.month}/${value.year}';
   }
 
-  String _khataLabel(String type) {
+  String _khataLabel(String type, AppLocalizations l10n) {
     switch (type) {
       case 'deposit':
-        return 'Deposit';
+        return l10n.t('deposit');
       case 'feed':
-        return 'Feed';
+        return l10n.t('feed');
       case 'advance':
-        return 'Advance';
+        return l10n.t('advance');
       case 'deduction':
-        return 'Manual Deduction';
+        return l10n.t('manualDeduction');
       default:
         return type;
     }

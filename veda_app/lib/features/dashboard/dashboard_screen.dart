@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../core/app_localizations.dart';
 import '../../models/app_user.dart';
 import '../../models/customer_model.dart';
+import '../../models/dashboard_report_model.dart';
 import '../../models/milk_entry_model.dart';
 import '../../services/auth_service.dart';
 import '../../services/customer_service.dart';
@@ -36,6 +38,7 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   List<CustomerModel> _customers = <CustomerModel>[];
   List<MilkEntryModel> _entries = <MilkEntryModel>[];
+  DashboardReportModel? _report;
   bool _loading = true;
 
   @override
@@ -49,6 +52,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
         await widget.customerService.fetchCustomers(widget.user.dairyId);
     final List<MilkEntryModel> entries =
         await widget.milkEntryService.fetchEntries(widget.user.dairyId);
+    final double totalAdvanceOutstanding = customers.fold(
+      0,
+      (double sum, CustomerModel customer) =>
+          sum + (customer.totalAdvance - customer.usedAdvance),
+    );
+    final DashboardReportModel report =
+        await widget.milkEntryService.buildDashboardReport(
+      dairyId: widget.user.dairyId,
+      activeFarmers: customers.where((CustomerModel customer) => customer.isActive).length,
+      totalAdvanceOutstanding: totalAdvanceOutstanding,
+    );
 
     if (!mounted) {
       return;
@@ -57,6 +71,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     setState(() {
       _customers = customers;
       _entries = entries;
+      _report = report;
       _loading = false;
     });
   }
@@ -84,20 +99,34 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final double totalMilk = _entries.fold(
-      0,
-      (double sum, MilkEntryModel item) => sum + item.liters,
-    );
-    final double totalAmount = _entries.fold(
-      0,
-      (double sum, MilkEntryModel item) => sum + item.amount,
-    );
+    final AppLocalizations l10n = AppLocalizations.of(context);
+    final DashboardReportModel report = _report ??
+        const DashboardReportModel(
+          todayMilkLiters: 0,
+          todayMilkValue: 0,
+          currentCycleAmount: 0,
+          currentCycleLiters: 0,
+          activeFarmers: 0,
+          totalAdvanceOutstanding: 0,
+          recentEntryCount: 0,
+        );
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Veda Dairy - ${widget.user.role}'),
+        title: Text(l10n.t('appName')),
         actions: <Widget>[
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.language),
+            onSelected: (String code) {
+              l10n.setLocale(Locale(code));
+            },
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+              PopupMenuItem<String>(value: 'en', child: Text(l10n.t('english'))),
+              PopupMenuItem<String>(value: 'mr', child: Text(l10n.t('marathi'))),
+            ],
+          ),
           IconButton(
+            tooltip: l10n.t('logout'),
             onPressed: () async {
               await widget.authService.signOut();
               widget.onLogout();
@@ -124,7 +153,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 }
               },
         icon: const Icon(Icons.add),
-        label: const Text('Milk Entry'),
+        label: Text(l10n.t('milkEntry')),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -134,26 +163,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 padding: const EdgeInsets.all(16),
                 children: <Widget>[
                   Text(
-                    'Welcome, ${widget.user.name}',
+                    l10n.t('welcome', <String, String>{'name': widget.user.name}),
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
                   const SizedBox(height: 16),
                   _SummaryCard(
-                    title: 'Milk Collection',
-                    value: '${totalMilk.toStringAsFixed(1)} L',
-                    subtitle: '${_entries.length} entries recorded today',
+                    title: l10n.t('todayMilk'),
+                    value: '${report.todayMilkLiters.toStringAsFixed(1)} L',
+                    subtitle: l10n.t(
+                      'todayValue',
+                      <String, String>{'value': report.todayMilkValue.toStringAsFixed(0)},
+                    ),
                   ),
                   const SizedBox(height: 12),
                   _SummaryCard(
-                    title: 'Collection Value',
-                    value: 'Rs ${totalAmount.toStringAsFixed(0)}',
-                    subtitle: 'Auto-calculated from liters, fat, and SNF',
+                    title: l10n.t('currentCycle'),
+                    value: 'Rs ${report.currentCycleAmount.toStringAsFixed(0)}',
+                    subtitle: l10n.t(
+                      'currentCycleSubtitle',
+                      <String, String>{'liters': report.currentCycleLiters.toStringAsFixed(1)},
+                    ),
                   ),
                   const SizedBox(height: 12),
                   _SummaryCard(
-                    title: 'Farmers',
-                    value: '${_customers.length}',
-                    subtitle: 'Active farmers in this dairy',
+                    title: l10n.t('farmers'),
+                    value: '${report.activeFarmers}',
+                    subtitle: l10n.t('activeFarmersSubtitle'),
+                  ),
+                  const SizedBox(height: 12),
+                  _SummaryCard(
+                    title: l10n.t('advanceOutstanding'),
+                    value: 'Rs ${report.totalAdvanceOutstanding.toStringAsFixed(0)}',
+                    subtitle: l10n.t('advanceOutstandingSubtitle'),
                   ),
                   const SizedBox(height: 20),
                   Row(
@@ -173,37 +214,37 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               ),
                             );
                           },
-                          child: const Text('View Farmers'),
+                          child: Text(l10n.t('viewFarmers')),
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: FilledButton.tonal(
                           onPressed: _openBilling,
-                          child: const Text('Open Billing'),
+                          child: Text(l10n.t('openBilling')),
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    'Recent Milk Entries',
+                    l10n.t('recentActivity'),
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 12),
                   if (_entries.isEmpty)
-                    const Card(
+                    Card(
                       child: Padding(
-                        padding: EdgeInsets.all(16),
-                        child: Text('No entries yet. Add the first milk collection.'),
+                        padding: const EdgeInsets.all(16),
+                        child: Text(l10n.t('noEntriesYet')),
                       ),
                     ),
-                  ..._entries.map(
+                  ..._entries.take(5).map(
                     (MilkEntryModel entry) => Card(
                       child: ListTile(
                         title: Text(entry.customerName),
                         subtitle: Text(
-                          '${entry.shift} | ${entry.cattleType} | Fat ${entry.fat.toStringAsFixed(1)} | SNF ${entry.snf.toStringAsFixed(1)}',
+                          '${entry.shift} | ${entry.cattleType} | ${_dateLabel(entry.createdAt)} | Fat ${entry.fat.toStringAsFixed(1)} | SNF ${entry.snf.toStringAsFixed(1)}',
                         ),
                         trailing: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -220,6 +261,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
     );
+  }
+
+  String _dateLabel(DateTime value) {
+    return '${value.day}/${value.month}/${value.year}';
   }
 }
 

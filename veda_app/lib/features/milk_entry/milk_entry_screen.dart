@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/app_localizations.dart';
 import '../../models/customer_model.dart';
 import '../../services/milk_entry_service.dart';
 
@@ -72,8 +73,9 @@ class _MilkEntryScreenState extends State<MilkEntryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('New Milk Entry')),
+      appBar: AppBar(title: Text(l10n.t('newMilkEntry'))),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -81,9 +83,9 @@ class _MilkEntryScreenState extends State<MilkEntryScreen> {
           children: <Widget>[
             DropdownButtonFormField<CustomerModel>(
               initialValue: _selectedCustomer,
-              decoration: const InputDecoration(
-                labelText: 'Farmer',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.t('farmer'),
+                border: const OutlineInputBorder(),
               ),
               items: widget.customers
                   .map(
@@ -102,13 +104,13 @@ class _MilkEntryScreenState extends State<MilkEntryScreen> {
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
               initialValue: _selectedShift,
-              decoration: const InputDecoration(
-                labelText: 'Shift',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.t('shift'),
+                border: const OutlineInputBorder(),
               ),
-              items: const <DropdownMenuItem<String>>[
-                DropdownMenuItem<String>(value: 'Morning', child: Text('Morning')),
-                DropdownMenuItem<String>(value: 'Evening', child: Text('Evening')),
+              items: <DropdownMenuItem<String>>[
+                DropdownMenuItem<String>(value: 'Morning', child: Text(l10n.t('morning'))),
+                DropdownMenuItem<String>(value: 'Evening', child: Text(l10n.t('evening'))),
               ],
               onChanged: (String? value) {
                 if (value == null) {
@@ -123,36 +125,36 @@ class _MilkEntryScreenState extends State<MilkEntryScreen> {
             TextFormField(
               controller: _litersController,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(
-                labelText: 'Liters',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.t('liters'),
+                border: const OutlineInputBorder(),
               ),
-              validator: _requiredNumber,
+              validator: (String? value) => _requiredNumber(value, l10n),
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _fatController,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(
-                labelText: 'Fat',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.t('fat'),
+                border: const OutlineInputBorder(),
               ),
-              validator: _requiredNumber,
+              validator: (String? value) => _requiredNumber(value, l10n),
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _snfController,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(
-                labelText: 'SNF',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.t('snf'),
+                border: const OutlineInputBorder(),
               ),
-              validator: _requiredNumber,
+              validator: (String? value) => _requiredNumber(value, l10n),
             ),
             const SizedBox(height: 20),
             FilledButton(
               onPressed: _saving ? null : _submit,
-              child: Text(_saving ? 'Saving...' : 'Save Entry'),
+              child: Text(_saving ? l10n.t('saving') : l10n.t('saveEntry')),
             ),
           ],
         ),
@@ -160,13 +162,13 @@ class _MilkEntryScreenState extends State<MilkEntryScreen> {
     );
   }
 
-  String? _requiredNumber(String? value) {
+  String? _requiredNumber(String? value, AppLocalizations l10n) {
     if (value == null || value.trim().isEmpty) {
-      return 'Required';
+      return l10n.t('required');
     }
     final double? parsed = double.tryParse(value);
     if (parsed == null || parsed <= 0) {
-      return 'Enter a valid number';
+      return l10n.t('enterValidNumber');
     }
     return null;
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/app_localizations.dart';
 import '../../models/customer_model.dart';
 import '../../services/customer_service.dart';
 import '../../services/khata_service.dart';
@@ -24,9 +25,10 @@ class FarmerListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Farmers'),
+        title: Text(l10n.t('farmersTitle')),
         actions: <Widget>[
           IconButton(
             onPressed: () async {
@@ -65,14 +67,14 @@ class FarmerListScreen extends StatelessWidget {
                 '${customer.village} | ${customer.cattleType} | ${customer.phone}',
               ),
               trailing: customer.isActive
-                  ? const Row(
+                  ? Row(
                       mainAxisSize: MainAxisSize.min,
                       children: <Widget>[
-                        Chip(label: Text('Active')),
-                        Icon(Icons.chevron_right),
+                        Chip(label: Text(l10n.t('active'))),
+                        const Icon(Icons.chevron_right),
                       ],
                     )
-                  : const Chip(label: Text('Inactive')),
+                  : Chip(label: Text(l10n.t('inactive'))),
             ),
           );
         },
