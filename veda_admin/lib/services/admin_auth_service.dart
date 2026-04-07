@@ -1,0 +1,50 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
+import '../models/admin_session_user.dart';
+
+class AdminAuthService {
+  AdminAuthService({
+    FirebaseAuth? auth,
+    FirebaseFirestore? firestore,
+  })  : _auth = auth ?? FirebaseAuth.instance,
+        _firestore = firestore ?? FirebaseFirestore.instance;
+
+  final FirebaseAuth _auth;
+  final FirebaseFirestore _firestore;
+
+  Future<AdminSessionUser?> currentAdminUser() async {
+    final User? user = _auth.currentUser;
+    if (user == null) {
+      return null;
+    }
+
+    final DocumentSnapshot<Map<String, dynamic>> snapshot =
+        await _firestore.collection('users').doc(user.uid).get();
+    if (!snapshot.exists) {
+      return null;
+    }
+
+    final Map<String, dynamic> data = snapshot.data()!;
+    final String role = (data['role'] as String?) ?? '';
+    if (role != 'admin') {
+      return AdminSessionUser(
+        id: user.uid,
+        name: (data['name'] as String?) ?? (user.email ?? 'User'),
+        email: (data['email'] as String?) ?? (user.email ?? ''),
+        role: role,
+      );
+    }
+
+    return AdminSessionUser(
+      id: user.uid,
+      name: (data['name'] as String?) ?? (user.email ?? 'Admin'),
+      email: (data['email'] as String?) ?? (user.email ?? ''),
+      role: role,
+    );
+  }
+
+  Future<void> signOut() async {
+    await _auth.signOut();
+  }
+}
