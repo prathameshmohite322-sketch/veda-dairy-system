@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/app_localizations.dart';
 import '../../models/app_user.dart';
+import '../../models/payment_checkout_result.dart';
 import '../../models/subscription_plan_model.dart';
 import '../../services/payment_service.dart';
 
@@ -111,8 +112,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     });
 
     final AppLocalizations l10n = AppLocalizations.of(context);
-    final String requestId =
-        await widget.paymentService.createSubscriptionRequest(
+    final bool useMobileCheckout =
+        widget.paymentService.isMobileCheckoutSupported &&
+            widget.paymentService.isRazorpayConfigured;
+    final PaymentCheckoutResult result =
+        await widget.paymentService.startSubscriptionCheckout(
       dairyId: widget.user.dairyId,
       userId: widget.user.id,
       userEmail: widget.user.email,
@@ -130,9 +134,12 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          l10n.t('subscriptionRequestCreated', <String, String>{
-            'requestId': requestId,
-          }),
+          useMobileCheckout
+              ? l10n.t(
+                  'paymentStatusMessage',
+                  <String, String>{'status': result.status},
+                )
+              : result.message,
         ),
       ),
     );

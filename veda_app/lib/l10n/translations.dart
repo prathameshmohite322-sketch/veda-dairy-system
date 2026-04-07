@@ -115,6 +115,7 @@ const Map<String, Map<String, String>> translations =
     'mobilePaymentNote':
         'Mobile checkout foundation is ready. The next step will connect Razorpay on Android.',
     'subscriptionRequestCreated': 'Subscription request created: {requestId}',
+    'paymentStatusMessage': 'Payment status: {status}',
   },
   'mr': <String, String>{
     'appName': 'वेदा डेअरी सिस्टम',

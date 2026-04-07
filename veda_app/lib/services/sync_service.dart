@@ -149,6 +149,22 @@ class SyncService {
           'createdAt': _timestampFrom(payload['createdAt']),
         });
         break;
+      case 'subscription_request_update':
+        await _firestore
+            .collection('dairies')
+            .doc(payload['dairyId'] as String)
+            .collection('subscription_requests')
+            .doc(payload['id'] as String)
+            .update(<String, dynamic>{
+          'status': payload['status'],
+          'statusMessage': payload['statusMessage'],
+          'paymentId': payload['paymentId'],
+          'signature': payload['signature'],
+          'externalWallet': payload['externalWallet'],
+          'errorCode': payload['errorCode'],
+          'updatedAt': _timestampFrom(payload['updatedAt']),
+        });
+        break;
       default:
         break;
     }

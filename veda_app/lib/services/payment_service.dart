@@ -1,7 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 
+import '../core/constants.dart';
+import '../models/payment_checkout_result.dart';
 import '../models/subscription_plan_model.dart';
+import 'mobile_checkout_gateway.dart';
+import 'mobile_checkout_gateway_factory.dart';
 import 'offline_service.dart';
 
 class PaymentService {
@@ -9,10 +13,12 @@ class PaymentService {
     FirebaseFirestore? firestore,
     OfflineService? offlineService,
   })  : _firestore = firestore ?? FirebaseFirestore.instance,
-        _offlineService = offlineService ?? OfflineService();
+        _offlineService = offlineService ?? OfflineService(),
+        _checkoutGateway = createMobileCheckoutGateway();
 
   final FirebaseFirestore _firestore;
   final OfflineService _offlineService;
+  final MobileCheckoutGateway _checkoutGateway;
 
   List<SubscriptionPlanModel> availablePlans() {
     return const <SubscriptionPlanModel>[
@@ -102,6 +108,45 @@ class PaymentService {
   }
 
   bool get isWebCheckoutFallback => kIsWeb;
+  bool get isMobileCheckoutSupported => !kIsWeb && _checkoutGateway.isSupported;
+  bool get isRazorpayConfigured =>
+      AppConstants.razorpayKeyId != 'rzp_test_replace_with_your_key';
+
+  Future<PaymentCheckoutResult> startSubscriptionCheckout({
+    required String dairyId,
+    required String userId,
+    required String userEmail,
+    required SubscriptionPlanModel plan,
+  }) async {
+    final String requestId = await createSubscriptionRequest(
+      dairyId: dairyId,
+      userId: userId,
+      userEmail: userEmail,
+      plan: plan,
+    );
+
+    if (!isMobileCheckoutSupported || !isRazorpayConfigured) {
+      return PaymentCheckoutResult(
+        status: 'request_only',
+        message: 'Subscription request saved with id $requestId.',
+      );
+    }
+
+    final PaymentCheckoutResult result =
+        await _checkoutGateway.openSubscriptionCheckout(
+      keyId: AppConstants.razorpayKeyId,
+      requestId: requestId,
+      userEmail: userEmail,
+      plan: plan,
+    );
+
+    await _persistCheckoutResult(
+      dairyId: dairyId,
+      requestId: requestId,
+      result: result,
+    );
+    return result;
+  }
 
   String _platformLabel() {
     if (kIsWeb) {
@@ -115,5 +160,52 @@ class PaymentService {
       default:
         return 'other';
     }
+  }
+
+  Future<void> _persistCheckoutResult({
+    required String dairyId,
+    required String requestId,
+    required PaymentCheckoutResult result,
+  }) async {
+    final Map<String, dynamic> update = <String, dynamic>{
+      'status': result.status,
+      'statusMessage': result.message,
+      'paymentId': result.paymentId,
+      'signature': result.signature,
+      'externalWallet': result.externalWallet,
+      'errorCode': result.errorCode,
+      'updatedAt': DateTime.now().toIso8601String(),
+    };
+
+    try {
+      await _firestore
+          .collection('dairies')
+          .doc(dairyId)
+          .collection('subscription_requests')
+          .doc(requestId)
+          .update(<String, dynamic>{
+        'status': result.status,
+        'statusMessage': result.message,
+        'paymentId': result.paymentId,
+        'signature': result.signature,
+        'externalWallet': result.externalWallet,
+        'errorCode': result.errorCode,
+        'updatedAt': Timestamp.fromDate(DateTime.now()),
+      });
+    } catch (_) {
+      await _offlineService.enqueuePendingOperation(
+        operationType: 'subscription_request_update',
+        recordId: requestId,
+        payload: <String, dynamic>{
+          'id': requestId,
+          'dairyId': dairyId,
+          ...update,
+        },
+      );
+    }
+  }
+
+  void dispose() {
+    _checkoutGateway.dispose();
   }
 }
